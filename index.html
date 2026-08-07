@@ -149,14 +149,15 @@
   }
   .mode-group{display:inline-flex;align-items:center;gap:8px}
   .btn-now{ /* appears only while the instrument is SET */
-    display:none;align-items:center;
-    padding:3px 9px 4px;border-radius:5px;cursor:pointer;
-    font-family:"Alegreya Sans",sans-serif;font-size:9.5px;font-weight:700;
-    letter-spacing:.14em;color:#42300f;text-shadow:0 1px 0 rgba(255,245,210,.5);
-    border:1px solid rgba(63,47,16,.7);
-    background:linear-gradient(180deg,#e2cb92,#b3924f 60%,#96773a);
-    box-shadow:0 1px 2px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,248,220,.7),
-               inset 0 -1px 2px rgba(63,47,16,.4);
+    display:none;align-items:center;justify-content:center;
+    padding:3px 10px 4px;border-radius:5px;cursor:pointer;
+    font-family:"Alegreya Sans",sans-serif;font-size:10px;font-weight:700;
+    letter-spacing:.24em;text-indent:.24em;
+    color:#42300f;text-shadow:0 1px 0 rgba(255,245,210,.45);
+    border:1px solid rgba(63,47,16,.65);
+    background:linear-gradient(180deg,#c9ab6d 0%,#b3924f 55%,#a0813f 100%);
+    box-shadow:0 1px 2px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,248,220,.5),
+               inset 0 -1px 1px rgba(63,47,16,.35);
   }
   .mode-ap.set + .btn-now{display:inline-flex}
   .btn-now:hover{filter:brightness(1.08)}
@@ -336,7 +337,7 @@
       <h1 class="engraved">STATIONS</h1>
       <span class="mode-group">
         <span class="mode-ap" id="modeLamp"><span id="modeText">LIVE</span></span>
-        <button class="btn-now" id="btnNow" title="Return to the current time">↩ NOW</button>
+        <button class="btn-now" id="btnNow" title="Return to the current time">NOW</button>
       </span>
     </div>
 
