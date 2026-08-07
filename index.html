@@ -396,12 +396,22 @@ const METALS = [
   {hi:'#f3dfae', mid:'#c9a668', lo:'#8a6a30', dark:'#3f2f10', light:'rgba(255,240,200,.38)'},
   {hi:'#f0f2f4', mid:'#b9bec6', lo:'#767c86', dark:'#23262c', light:'rgba(255,255,255,.42)'},
 ];
-const ENAMEL = { night:'#16233f', shoulder:'#8f5b28', fringe:'#dcb56b', prime:'#f7eed2' };
-function hourCat(h){
-  if (h>=9 && h<18) return 'prime';
-  if ((h>=8&&h<9)||(h>=18&&h<20)) return 'fringe';
-  if ((h>=6&&h<8)||(h>=20&&h<22)) return 'shoulder';
-  return 'night';
+/* fired-enamel sky: continuous color over the 24h day, wrapping at midnight */
+const SKY = [
+  [ 0.0,  13, 27, 58], [ 2.5,  10, 22, 50], [ 4.5,  18, 32, 68],
+  [ 5.5,  47, 48, 88], [ 6.3, 122, 78, 74], [ 7.0, 189,124, 78],
+  [ 8.0, 222,168,102], [ 9.5, 238,213,160], [12.0, 247,238,207],
+  [14.5, 243,228,185], [16.5, 232,200,138], [18.0, 209,152, 85],
+  [19.0, 164, 95, 63], [19.8, 109, 70, 87], [20.6,  61, 55, 96],
+  [21.5,  33, 40, 78], [23.0,  18, 30, 62], [24.0,  13, 27, 58],
+];
+function skyAt(h){
+  h = ((h%24)+24)%24;
+  let i = 0;
+  while (i < SKY.length-2 && SKY[i+1][0] <= h) i++;
+  const a = SKY[i], b = SKY[i+1];
+  const t = (h - a[0]) / (b[0] - a[0]);
+  return `rgb(${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)},${Math.round(a[3]+(b[3]-a[3])*t)})`;
 }
 /* accent dots used on the plaque to tie rows to rings */
 const RINGDOT = ['#c9a668','#b9bec6','#c9a668','#b9bec6','#c9a668','#b9bec6'];
@@ -567,18 +577,19 @@ function drawRing(i, st, count){
   const numSize = Math.min(14, bandW*0.28);
   const nameSize = Math.min(16.5, bandW*0.32);
 
-  /* enamel channel — 24 hourly wedges, in the ring's rotated frame */
+  /* enamel channel — continuous sky gradient, in the ring's rotated frame */
   ctx.save();
   ctx.translate(C,C); ctx.rotate(rot); ctx.translate(-C,-C);
-  for (let h=0; h<24; h++){
-    const a0 = (h*60/1440)*TAU - Math.PI/2;
-    const a1 = ((h+1)*60/1440)*TAU - Math.PI/2;
+  const SEG = 288;
+  for (let k=0; k<SEG; k++){
+    const a0 = (k/SEG)*TAU - Math.PI/2;
+    const a1 = ((k+1)/SEG)*TAU - Math.PI/2 + 0.004;   // overlap kills hairline gaps
     annulus(enIn, enOut, a0, a1);
-    ctx.fillStyle = ENAMEL[hourCat(h)];
+    ctx.fillStyle = skyAt((k+0.5)*24/SEG);
     ctx.fill();
   }
-  // cloisonné hour separators
-  ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=0.8;
+  // cloisonné hour separators — whisper-thin so the gradient flows through
+  ctx.strokeStyle='rgba(0,0,0,.10)'; ctx.lineWidth=0.7;
   for (let h=0; h<24; h++){
     const a = (h*60/1440)*TAU - Math.PI/2;
     ctx.beginPath();
@@ -600,6 +611,39 @@ function drawRing(i, st, count){
   ctx.beginPath(); ctx.arc(C,C,enOut-0.5,0,TAU); ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.lineWidth=0.8;
   ctx.beginPath(); ctx.arc(C,C,enOut-1.6,0,TAU); ctx.stroke();
+
+  /* worldtimer inlays: gold sun at this ring's noon, silver crescent at its midnight */
+  {
+    const rMid = (enIn+enOut)/2, ebw = enOut-enIn;
+    const rs = Math.min(ebw*0.27, 5.5);
+    const sx = C, sy = C + rMid;              // local noon is at +y
+    ctx.strokeStyle='rgba(112,74,16,.8)'; ctx.lineWidth=1;
+    for (let i=0;i<8;i++){
+      const ra=i*Math.PI/4 + Math.PI/8;
+      ctx.beginPath();
+      ctx.moveTo(sx+Math.cos(ra)*(rs+1.1), sy+Math.sin(ra)*(rs+1.1));
+      ctx.lineTo(sx+Math.cos(ra)*(rs+2.9), sy+Math.sin(ra)*(rs+2.9));
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(sx,sy,rs,0,TAU);
+    const sg=ctx.createRadialGradient(sx-rs*.4,sy-rs*.4,.4,sx,sy,rs);
+    sg.addColorStop(0,'#f8dd9c'); sg.addColorStop(.7,'#d9ab52'); sg.addColorStop(1,'#a97c26');
+    ctx.fillStyle=sg; ctx.fill();
+    ctx.strokeStyle='rgba(104,68,14,.9)'; ctx.lineWidth=1; ctx.stroke();
+
+    const mx = C, my = C - rMid;              // local midnight is at −y
+    const rm = rs;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(mx,my,rm,0,TAU); ctx.clip();
+    const mg=ctx.createRadialGradient(mx-rm*.4,my-rm*.4,.4,mx,my,rm);
+    mg.addColorStop(0,'#f4f7fc'); mg.addColorStop(.7,'#c9d4e6'); mg.addColorStop(1,'#93a3c0');
+    ctx.fillStyle=mg; ctx.fillRect(mx-rm,my-rm,rm*2,rm*2);
+    ctx.beginPath(); ctx.arc(mx+rm*0.62, my-rm*0.28, rm*0.88, 0, TAU);
+    ctx.fillStyle = skyAt(0); ctx.fill();
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(mx,my,rm,0,TAU);
+    ctx.strokeStyle='rgba(196,210,238,.55)'; ctx.lineWidth=.8; ctx.stroke();
+  }
 
   /* city name curved at local noon */
   const label = st.name.toUpperCase();
@@ -623,16 +667,6 @@ function drawRing(i, st, count){
     ctx.stroke();
   }
   ctx.globalAlpha=1;
-  // red midnight pip (always opposite the name, never suppressed)
-  {
-    const aM = -Math.PI/2, rT = rOut - bandW*0.095;
-    ctx.save();
-    ctx.translate(C+Math.cos(aM)*rT, C+Math.sin(aM)*rT); ctx.rotate(aM+Math.PI/2);
-    ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(3,0); ctx.lineTo(0,6); ctx.closePath();
-    ctx.fillStyle='#a32c2c'; ctx.fill();
-    ctx.strokeStyle='rgba(40,8,8,.6)'; ctx.lineWidth=.8; ctx.stroke();
-    ctx.restore();
-  }
   for (let h=0; h<24; h++){
     const a = (h*60/1440)*TAU - Math.PI/2;
     if (angDist(a, noonLocal) < nameSpan/2 + 0.10) continue;
@@ -654,6 +688,17 @@ function drawRing(i, st, count){
       ctx.restore();
     }
   }
+  ctx.restore();
+
+  /* fired-enamel gloss — screen-fixed, so it reads as light on glazing */
+  ctx.save();
+  annulus(enIn, enOut, 0, TAU); ctx.clip();
+  const gloss = ctx.createRadialGradient(C-170, C-210, 40, C, C, rOut+40);
+  gloss.addColorStop(0,'rgba(255,255,255,.15)');
+  gloss.addColorStop(.45,'rgba(255,255,255,.04)');
+  gloss.addColorStop(.75,'rgba(255,255,255,0)');
+  gloss.addColorStop(1,'rgba(0,0,10,.08)');
+  ctx.fillStyle=gloss; ctx.fillRect(0,0,S,S);
   ctx.restore();
 
   /* hover glow */
