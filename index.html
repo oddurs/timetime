@@ -38,6 +38,11 @@
     content:"";position:fixed;inset:0;pointer-events:none;
     box-shadow:inset 0 0 220px rgba(0,0,0,.55);
   }
+  body::before{ /* saddle stitching around the desk pad */
+    content:"";position:fixed;inset:12px;pointer-events:none;
+    border:2px dashed rgba(219,183,116,.26);border-radius:16px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.32), inset 0 0 0 1px rgba(0,0,0,.32);
+  }
   .stage{
     min-height:100%;
     display:flex;align-items:center;justify-content:center;
@@ -46,7 +51,23 @@
     padding:clamp(20px,4vw,56px);
   }
   /* ---------- Instrument ---------- */
-  .dial-wrap{position:relative;flex:0 1 auto}
+  .dial-wrap{position:relative;flex:0 1 auto;display:flex;flex-direction:column;align-items:center}
+  .maker{
+    margin-top:22px;padding:7px 28px 8px;border-radius:999px;
+    background:linear-gradient(168deg,#e8cf97,#c9a668 40%,#a9854a 70%,#8a6a30);
+    box-shadow:0 8px 16px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,245,215,.7),
+               inset 0 -2px 3px rgba(63,47,16,.5);
+    text-align:center;
+  }
+  .maker .m1{
+    display:block;font-family:"Cormorant SC",serif;font-weight:700;font-size:15px;
+    letter-spacing:.22em;color:#42300f;text-shadow:0 1px 0 rgba(255,245,210,.45);
+  }
+  .maker .m2{
+    display:block;margin-top:1px;
+    font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:8.5px;
+    letter-spacing:.3em;color:rgba(66,48,15,.8);text-shadow:0 1px 0 rgba(255,245,210,.4);
+  }
   canvas#dial{
     display:block;
     width:min(86vmin,760px);height:min(86vmin,760px);
@@ -65,8 +86,12 @@
     width:min(92vw,368px);
     padding:26px 24px 22px;
     border-radius:10px;
-    background:
+    background-image:
+      url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Cg%20fill='%2342300f'%20fill-opacity='.10'%20stroke='%2342300f'%20stroke-opacity='.16'%20stroke-width='.7'%3E%3Cpath%20d='M50%202%2054.5%2045.5%2050%2050%2045.5%2045.5Z'/%3E%3Cpath%20d='M50%2098%2054.5%2054.5%2050%2050%2045.5%2054.5Z'/%3E%3Cpath%20d='M2%2050%2045.5%2054.5%2050%2050%2045.5%2045.5Z'/%3E%3Cpath%20d='M98%2050%2054.5%2054.5%2050%2050%2054.5%2045.5Z'/%3E%3Cg%20transform='rotate(45%2050%2050)'%3E%3Cpath%20d='M50%2014%2053.2%2046.8%2050%2050%2046.8%2046.8Z'/%3E%3Cpath%20d='M50%2086%2053.2%2053.2%2050%2050%2046.8%2053.2Z'/%3E%3Cpath%20d='M14%2050%2046.8%2053.2%2050%2050%2046.8%2046.8Z'/%3E%3Cpath%20d='M86%2050%2053.2%2053.2%2050%2050%2053.2%2046.8Z'/%3E%3C/g%3E%3C/g%3E%3Ccircle%20cx='50'%20cy='50'%20r='21'%20fill='none'%20stroke='%2342300f'%20stroke-opacity='.18'%20stroke-width='.7'/%3E%3Ccircle%20cx='50'%20cy='50'%20r='2.6'%20fill='%2342300f'%20fill-opacity='.22'/%3E%3C/svg%3E"),
       linear-gradient(168deg, #e8cf97 0%, #c9a668 28%, #a9854a 62%, #c9a668 88%, #8a6a30 100%);
+    background-position:right 24px bottom 56px, 0 0;
+    background-size:112px 112px, auto;
+    background-repeat:no-repeat, no-repeat;
     box-shadow:
       0 22px 44px rgba(0,0,0,.55),
       0 4px 10px rgba(0,0,0,.4),
@@ -75,6 +100,11 @@
       inset 2px 0 3px rgba(255,240,200,.25),
       inset -2px 0 4px rgba(63,47,16,.35);
     color:var(--brass-dark);
+  }
+  .plaque::before{ /* engraved inner frame */
+    content:"";position:absolute;inset:16px;pointer-events:none;
+    border:1px solid rgba(63,47,16,.42);border-radius:6px;
+    box-shadow:0 1px 0 rgba(255,245,210,.28), inset 0 1px 0 rgba(255,245,210,.22);
   }
   .plaque .screw{
     position:absolute;width:14px;height:14px;border-radius:50%;
@@ -218,6 +248,10 @@
   <div class="dial-wrap">
     <canvas id="dial" width="760" height="760" tabindex="0"
       aria-label="World-time dial. Drag or use arrow keys to change the meeting time."></canvas>
+    <div class="maker" aria-hidden="true">
+      <span class="m1">Meridian &amp; Cº</span>
+      <span class="m2">MARINE WORLD·TIME · Nº 1888</span>
+    </div>
   </div>
 
   <aside class="plaque" aria-label="Stations">
@@ -445,9 +479,10 @@ function drawCase(){
   g.addColorStop(0,'#4b4f56'); g.addColorStop(.35,'#23262c');
   g.addColorStop(.65,'#3a3e45'); g.addColorStop(1,'#15171b');
   ctx.fillStyle=g; ctx.fill();
-  // knurling
+  // knurling (gap at the bottom for the maker's engraving)
   ctx.lineWidth=1.4;
   for (let d=0; d<360; d+=2.5){
+    if (d>62 && d<118) continue;
     const a = d*Math.PI/180;
     const r1=CASE_R-3, r2=CASE_R-CASE_W+4;
     ctx.strokeStyle = (d%5<2.5) ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.38)';
@@ -461,6 +496,45 @@ function drawCase(){
   ctx.beginPath(); ctx.arc(C,C,CASE_R-1,0,TAU); ctx.stroke();
   ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.arc(C,C,RING_OUT+1,0,TAU); ctx.stroke();
+  // maker's line incised into the case band
+  const incised = {dark:'rgba(214,224,234,.6)', light:'rgba(0,0,0,.55)'};
+  arcText('MERIDIAN & Cº · MARINE WORLD·TIME · Nº 1888',
+    CASE_R-CASE_W/2+1, Math.PI/2, 8.5, '"Cormorant SC"', incised, true, 600, 1.6);
+  // slotted case screws on the diagonals
+  for (const deg of [45,135,225,315]){
+    const a=deg*Math.PI/180;
+    const sx=C+Math.cos(a)*(CASE_R-CASE_W/2), sy=C+Math.sin(a)*(CASE_R-CASE_W/2);
+    ctx.beginPath(); ctx.arc(sx,sy,3.6,0,TAU);
+    const sg=ctx.createRadialGradient(sx-1.2,sy-1.2,.4,sx,sy,3.8);
+    sg.addColorStop(0,'#dfe3e8'); sg.addColorStop(.6,'#8d939c'); sg.addColorStop(1,'#3f434a');
+    ctx.fillStyle=sg; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.save(); ctx.translate(sx,sy); ctx.rotate(deg*1.3);
+    ctx.strokeStyle='rgba(15,17,20,.85)'; ctx.lineWidth=1.3;
+    ctx.beginPath(); ctx.moveTo(-2.6,0); ctx.lineTo(2.6,0); ctx.stroke();
+    ctx.restore();
+  }
+  // gimbal lugs with pivot screws at 3 and 9 o'clock
+  for (const side of [0, Math.PI]){
+    ctx.save();
+    ctx.translate(C+Math.cos(side)*(CASE_R-CASE_W/2), C+Math.sin(side)*(CASE_R-CASE_W/2));
+    ctx.beginPath(); ctx.roundRect(-9,-17,18,34,5);
+    const lg=ctx.createLinearGradient(0,-17,0,17);
+    lg.addColorStop(0,'#e8cf97'); lg.addColorStop(.5,'#a9854a'); lg.addColorStop(1,'#6f5522');
+    ctx.fillStyle=lg; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=1.2; ctx.stroke();
+    ctx.strokeStyle='rgba(255,245,210,.35)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(-7.5,-15.5,15,31,4); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,5,0,TAU);
+    const pg=ctx.createRadialGradient(-1.5,-1.5,.5,0,0,5.2);
+    pg.addColorStop(0,'#f6e7bd'); pg.addColorStop(.6,'#b3924f'); pg.addColorStop(1,'#5c4718');
+    ctx.fillStyle=pg; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.rotate(side+0.5);
+    ctx.strokeStyle='rgba(30,20,5,.8)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(-3.2,0); ctx.lineTo(3.2,0); ctx.stroke();
+    ctx.restore();
+  }
   ctx.restore();
 }
 
@@ -535,6 +609,29 @@ function drawRing(i, st, count){
 
   /* hour ticks + numerals (skip under the name) */
   const angDist = (a,b)=>{ let d=Math.abs(a-b)%TAU; return d>Math.PI? TAU-d : d; };
+  // half-hour minor ticks
+  ctx.globalAlpha=.45;
+  for (let h=0; h<24; h++){
+    const a = ((h+0.5)*60/1440)*TAU - Math.PI/2;
+    if (angDist(a, noonLocal) < nameSpan/2 + 0.08) continue;
+    ctx.strokeStyle=pal.dark; ctx.lineWidth=.8;
+    const t1 = rOut - bandW*0.09, t2 = rOut - bandW*0.14;
+    ctx.beginPath();
+    ctx.moveTo(C+Math.cos(a)*t1, C+Math.sin(a)*t1);
+    ctx.lineTo(C+Math.cos(a)*t2, C+Math.sin(a)*t2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  // red midnight pip (always opposite the name, never suppressed)
+  {
+    const aM = -Math.PI/2, rT = rOut - bandW*0.095;
+    ctx.save();
+    ctx.translate(C+Math.cos(aM)*rT, C+Math.sin(aM)*rT); ctx.rotate(aM+Math.PI/2);
+    ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(3,0); ctx.lineTo(0,6); ctx.closePath();
+    ctx.fillStyle='#a32c2c'; ctx.fill();
+    ctx.strokeStyle='rgba(40,8,8,.6)'; ctx.lineWidth=.8; ctx.stroke();
+    ctx.restore();
+  }
   for (let h=0; h<24; h++){
     const a = (h*60/1440)*TAU - Math.PI/2;
     if (angDist(a, noonLocal) < nameSpan/2 + 0.10) continue;
@@ -764,30 +861,37 @@ function drawHubText(){ // etched into the glass
 
 function drawLubber(){
   ctx.save();
-  // hairline across the rings
-  const g = ctx.createLinearGradient(C, C-CASE_R, C, C-HUB_R);
-  g.addColorStop(0,'rgba(196,60,60,.95)');
-  g.addColorStop(1,'rgba(196,60,60,.55)');
-  ctx.strokeStyle=g; ctx.lineWidth=2;
-  ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=3; ctx.shadowOffsetY=1;
+  // blued-steel spade needle from the jewel down to the hub
+  const y0 = C-CASE_R+17, y1 = C-HUB_R+4;
+  const ng = ctx.createLinearGradient(C-4,0,C+4,0);
+  ng.addColorStop(0,'#060d1d'); ng.addColorStop(.42,'#1d3a68');
+  ng.addColorStop(.5,'#41689e'); ng.addColorStop(.58,'#1d3a68'); ng.addColorStop(1,'#050b19');
+  ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=5; ctx.shadowOffsetY=2;
   ctx.beginPath();
-  ctx.moveTo(C, C-CASE_R+4); ctx.lineTo(C, C-HUB_R+2);
-  ctx.stroke();
+  ctx.moveTo(C-2.1, y0);
+  ctx.lineTo(C-1.4, y1-17);
+  ctx.lineTo(C-4.2, y1-13);
+  ctx.lineTo(C, y1);
+  ctx.lineTo(C+4.2, y1-13);
+  ctx.lineTo(C+1.4, y1-17);
+  ctx.lineTo(C+2.1, y0);
+  ctx.closePath();
+  ctx.fillStyle=ng; ctx.fill();
   ctx.shadowColor='transparent';
-  // jewel at the case
+  ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=.8; ctx.stroke();
+  // polished spine catching the light
+  ctx.strokeStyle='rgba(150,190,240,.55)'; ctx.lineWidth=.7;
+  ctx.beginPath(); ctx.moveTo(C, y0+2); ctx.lineTo(C, y1-15); ctx.stroke();
+  // ruby jewel in a brass collet at the case
   const jy = C-CASE_R+10;
+  ctx.beginPath(); ctx.arc(C, jy, 8.5, 0, TAU);
+  ctx.strokeStyle='rgba(201,166,104,.9)'; ctx.lineWidth=2; ctx.stroke();
   ctx.beginPath(); ctx.arc(C, jy, 6.5, 0, TAU);
   const jg = ctx.createRadialGradient(C-2, jy-2.5, 0.5, C, jy, 7);
   jg.addColorStop(0,'#ff9d94'); jg.addColorStop(.35,'#d84a44');
   jg.addColorStop(.8,'#8e1f1e'); jg.addColorStop(1,'#5c0f10');
   ctx.fillStyle=jg; ctx.fill();
   ctx.strokeStyle='rgba(255,235,200,.55)'; ctx.lineWidth=1; ctx.stroke();
-  // pointer at hub
-  ctx.beginPath();
-  ctx.moveTo(C-5, C-HUB_R+1); ctx.lineTo(C+5, C-HUB_R+1); ctx.lineTo(C, C-HUB_R+10);
-  ctx.closePath();
-  ctx.fillStyle='#c43c3c'; ctx.fill();
-  ctx.strokeStyle='rgba(0,0,0,.45)'; ctx.lineWidth=1; ctx.stroke();
   ctx.restore();
 }
 
