@@ -53,20 +53,34 @@
   /* ---------- Instrument ---------- */
   .dial-wrap{position:relative;flex:0 1 auto;display:flex;flex-direction:column;align-items:center}
   .maker{
-    margin-top:22px;padding:7px 28px 8px;border-radius:999px;
+    position:relative;
+    margin-top:22px;padding:9px 30px 10px;border-radius:999px;
     background:linear-gradient(168deg,#e8cf97,#c9a668 40%,#a9854a 70%,#8a6a30);
     box-shadow:0 8px 16px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,245,215,.7),
                inset 0 -2px 3px rgba(63,47,16,.5);
     text-align:center;
   }
-  .maker .m1{
-    display:block;font-family:"Cormorant SC",serif;font-weight:700;font-size:15px;
-    letter-spacing:.22em;color:#42300f;text-shadow:0 1px 0 rgba(255,245,210,.45);
+  .maker::before{ /* engraved border ring */
+    content:"";position:absolute;inset:4px;border-radius:999px;pointer-events:none;
+    border:1px solid rgba(63,47,16,.45);
+    box-shadow:0 1px 0 rgba(255,245,210,.3), inset 0 1px 0 rgba(255,245,210,.25);
   }
+  .maker .m1{
+    display:flex;align-items:center;justify-content:center;gap:11px;
+    font-family:"Cormorant",serif;font-weight:700;font-size:16.5px;
+    letter-spacing:.10em;color:#42300f;text-shadow:0 1px 0 rgba(255,245,210,.45);
+    white-space:nowrap;
+  }
+  .maker .m1::before,.maker .m1::after{
+    content:"";height:1px;width:24px;flex:none;
+    box-shadow:0 1px 0 rgba(255,245,210,.35);
+  }
+  .maker .m1::before{background:linear-gradient(90deg,transparent,rgba(66,48,15,.6))}
+  .maker .m1::after{background:linear-gradient(270deg,transparent,rgba(66,48,15,.6))}
   .maker .m2{
-    display:block;margin-top:1px;
+    display:block;margin-top:2px;
     font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:8.5px;
-    letter-spacing:.3em;color:rgba(66,48,15,.8);text-shadow:0 1px 0 rgba(255,245,210,.4);
+    letter-spacing:.18em;color:rgba(66,48,15,.8);text-shadow:0 1px 0 rgba(255,245,210,.4);
   }
   canvas#dial{
     display:block;
@@ -266,8 +280,8 @@
     <canvas id="dial" width="760" height="760" tabindex="0"
       aria-label="World-time dial. Drag or use arrow keys to change the meeting time."></canvas>
     <div class="maker" aria-hidden="true">
-      <span class="m1">Meridian &amp; Cº</span>
-      <span class="m2">MARINE WORLD·TIME · Nº 1888</span>
+      <span class="m1">MERIDIAN &amp; CO.</span>
+      <span class="m2">MARINE WORLD-TIME · No. 1888</span>
     </div>
   </div>
 
@@ -533,7 +547,7 @@ function drawCase(){
   ctx.beginPath(); ctx.arc(C,C,RING_OUT+1,0,TAU); ctx.stroke();
   // maker's line incised into the case band
   const incised = {dark:'rgba(214,224,234,.6)', light:'rgba(0,0,0,.55)'};
-  arcText('MERIDIAN & Cº · MARINE WORLD·TIME · Nº 1888',
+  arcText('MERIDIAN & CO. · MARINE WORLD-TIME · No. 1888',
     CASE_R-CASE_W/2+1, Math.PI/2, 8.5, '"Cormorant SC"', incised, true, 600, 1.6);
   // slotted case screws on the diagonals
   for (const deg of [45,135,225,315]){
