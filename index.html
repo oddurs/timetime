@@ -6,7 +6,7 @@
 <title>Meridian — world-time instrument</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Cormorant+SC:wght@600;700&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --leather-0:#1b140e;
@@ -31,7 +31,7 @@
       radial-gradient(1100px 800px at 108% 112%, #221a11 0%, rgba(34,26,17,0) 60%),
       var(--leather-0);
     color:var(--ivory);
-    font-family:"Spectral",Georgia,serif;
+    font-family:"Cormorant",Georgia,serif;
     overflow-x:hidden;
   }
   body::after{ /* vignette */
@@ -99,11 +99,11 @@
     box-shadow:0 1px 0 rgba(255,245,210,.35);
   }
   .plaque-head h1{
-    font-family:"Cinzel",serif;font-weight:700;font-size:19px;letter-spacing:.14em;
+    font-family:"Cormorant SC",serif;font-weight:700;font-size:22px;letter-spacing:.18em;
   }
   .mode-lamp{
     display:inline-flex;align-items:center;gap:7px;
-    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.12em;font-weight:600;
+    font-family:"Alegreya Sans",sans-serif;font-size:10.5px;letter-spacing:.16em;font-weight:700;
   }
   .mode-lamp .bulb{
     width:9px;height:9px;border-radius:50%;
@@ -118,7 +118,7 @@
   .search{position:relative;margin:12px 0 10px}
   .search input{
     width:100%;padding:9px 12px 8px;
-    font-family:"Spectral",serif;font-size:15px;color:var(--ivory);
+    font-family:"Cormorant",serif;font-size:16.5px;font-weight:500;color:var(--ivory);
     background:linear-gradient(180deg,#241d12,#332a1a);
     border:1px solid rgba(63,47,16,.9);
     border-radius:6px;
@@ -137,7 +137,7 @@
   .search .results button{
     display:flex;width:100%;gap:9px;align-items:center;
     padding:8px 12px;border:0;background:none;cursor:pointer;
-    font-family:"Spectral",serif;font-size:14.5px;color:var(--ivory);text-align:left;
+    font-family:"Cormorant",serif;font-size:16px;font-weight:500;color:var(--ivory);text-align:left;
   }
   .search .results button:hover,.search .results button.sel{background:rgba(201,166,104,.22)}
   .search .results .co{margin-left:auto;font-size:12px;opacity:.55;font-style:italic}
@@ -153,18 +153,18 @@
   .stations li.hover{background:rgba(255,245,210,.22);border-radius:4px}
   .stations .flag{font-size:16px;filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
   .stations .name{
-    font-family:"Cinzel",serif;font-weight:600;font-size:13.5px;letter-spacing:.05em;
+    font-family:"Cormorant SC",serif;font-weight:600;font-size:16.5px;letter-spacing:.07em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .stations .swatch{width:8px;height:8px;border-radius:50%;flex:none;
     box-shadow:inset 0 0 0 1px rgba(63,47,16,.6)}
   .stations .time{
     margin-left:auto;
-    font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;
-    font-variant-numeric:tabular-nums;white-space:nowrap;
+    font-family:"Cormorant",serif;font-size:17px;font-weight:600;
+    font-variant-numeric:lining-nums tabular-nums;white-space:nowrap;
   }
   .stations .day{
-    font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;
+    font-family:"Alegreya Sans",sans-serif;font-size:10px;font-weight:700;
     padding:2px 5px;border-radius:4px;
     background:rgba(63,47,16,.8);color:#f0dfae;
     box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
@@ -173,14 +173,14 @@
     border:0;background:none;cursor:pointer;flex:none;
     width:20px;height:20px;border-radius:50%;
     color:rgba(63,47,16,.55);font-size:13px;line-height:1;
-    font-family:"IBM Plex Mono",monospace;
+    font-family:"Alegreya Sans",sans-serif;
   }
   .stations .rm:hover{color:#7c1f1f;background:rgba(63,47,16,.15)}
   /* buttons */
   .controls{display:flex;gap:10px;margin-top:16px}
   .btn{
     flex:1;padding:9px 4px 8px;
-    font-family:"Cinzel",serif;font-weight:600;font-size:12.5px;letter-spacing:.09em;
+    font-family:"Cormorant SC",serif;font-weight:700;font-size:14.5px;letter-spacing:.12em;
     color:#20242b;cursor:pointer;
     border-radius:7px;
     border:1px solid #55595f;
@@ -396,16 +396,20 @@ function engraveText(txt, x, y, size, family, pal, weight){
   ctx.fillText(txt, x, y);
 }
 
-/* text along an arc, chars oriented radially (feet toward hub) */
-function arcText(txt, r, centerAngle, size, family, pal, flip, weight){
+/* text along an arc, chars oriented radially (feet toward hub);
+   track = extra px between chars for cartographic letterspaced caps */
+function arcText(txt, r, centerAngle, size, family, pal, flip, weight, track){
   ctx.font = `${weight||600} ${size}px ${family}`;
-  const widths = [...txt].map(ch=>ctx.measureText(ch).width);
-  const total = widths.reduce((a,b)=>a+b,0);
-  const totalAng = total / r;
-  let a = centerAngle - totalAng/2 * (flip?-1:1);
+  track = track || 0;
   const chars = [...txt];
+  const widths = chars.map(ch=>ctx.measureText(ch).width);
+  const total = widths.reduce((a,b)=>a+b,0) + track*(chars.length-1);
+  const totalAng = total / r;
+  const dir = flip ? -1 : 1;
+  let a = centerAngle - totalAng/2 * dir;
   for (let i=0;i<chars.length;i++){
-    const w = widths[i], half = (w/2)/r * (flip?-1:1);
+    const w = widths[i], half = (w/2)/r * dir;
+    if (i>0) a += track/r * dir;
     a += half;
     ctx.save();
     ctx.translate(C + Math.cos(a)*r, C + Math.sin(a)*r);
@@ -479,8 +483,8 @@ function drawRing(i, st, count){
   const numeralR = rOut - bandW*0.26;
   const enOut = rOut - bandW*0.50;
   const enIn  = rOut - bandW*0.86;
-  const numSize = Math.min(15, bandW*0.30);
-  const nameSize = Math.min(14.5, bandW*0.285);
+  const numSize = Math.min(14, bandW*0.28);
+  const nameSize = Math.min(16.5, bandW*0.32);
 
   /* enamel channel — 24 hourly wedges, in the ring's rotated frame */
   ctx.save();
@@ -517,12 +521,11 @@ function drawRing(i, st, count){
   ctx.beginPath(); ctx.arc(C,C,enOut-1.6,0,TAU); ctx.stroke();
 
   /* city name curved at local noon */
-  ctx.font = `600 ${nameSize}px Cinzel`;
   const label = st.name.toUpperCase();
   const noonLocal = (720/1440)*TAU - Math.PI/2;             // local-frame angle of 12:00
   const noonScreen = noonLocal + rot;
   const flip = Math.sin(noonScreen) > 0;                    // lower half of screen → flip
-  const nameSpan = arcText(label, numeralR, noonLocal, nameSize, 'Cinzel', pal, flip);
+  const nameSpan = arcText(label, numeralR, noonLocal, nameSize, 'Cormorant', pal, flip, 700, nameSize*0.18);
 
   /* hour ticks + numerals (skip under the name) */
   const angDist = (a,b)=>{ let d=Math.abs(a-b)%TAU; return d>Math.PI? TAU-d : d; };
@@ -540,7 +543,7 @@ function drawRing(i, st, count){
       ctx.save();
       ctx.translate(C+Math.cos(a)*numeralR, C+Math.sin(a)*numeralR);
       ctx.rotate(a+Math.PI/2);
-      ctx.font = `600 ${numSize}px "IBM Plex Mono"`;
+      ctx.font = `500 ${numSize}px "Alegreya Sans"`;
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillStyle = pal.light; ctx.fillText(String(h), 0, 1);
       ctx.fillStyle = pal.dark;  ctx.fillText(String(h), 0, 0);
@@ -646,21 +649,27 @@ function drawHubText(){ // etched into the glass
   const ms = snappedSel();
   const home = stations[0];
   const p = tzParts(home.tz, ms);
-  etch('MERIDIAN', C-64, 15, 'Cinzel', 700, 'rgba(234,246,255,.92)');
-  etch('W O R L D · T I M E', C-48, 8, '"IBM Plex Mono"', 500, 'rgba(190,222,250,.55)');
+  ctx.letterSpacing='4px';
+  etch('MERIDIAN', C-64, 18, 'Cormorant', 700, 'rgba(234,246,255,.92)');
+  ctx.letterSpacing='0px';
+  etch('W O R L D · T I M E', C-47, 8, '"Alegreya Sans"', 700, 'rgba(190,222,250,.55)');
   ctx.save();
   ctx.shadowColor='rgba(90,170,255,.55)'; ctx.shadowBlur=12;
-  etch(fmtTime(home.tz, ms), C-6, 34, '"IBM Plex Mono"', 600, '#f2f8ff');
+  etch(fmtTime(home.tz, ms), C-6, 40, 'Cormorant', 600, '#f2f8ff');
   ctx.restore();
-  etch(home.name.toUpperCase(), C+24, 10.5, 'Cinzel', 600, 'rgba(214,236,255,.78)');
+  ctx.letterSpacing='2px';
+  etch(home.name.toUpperCase(), C+24, 12.5, 'Cormorant', 600, 'rgba(214,236,255,.78)');
+  ctx.letterSpacing='0px';
   // date on a smoked-glass pill
   const w=94, h=21, y=C+42;
   ctx.beginPath(); ctx.roundRect(C-w/2, y, w, h, 10.5);
   ctx.fillStyle='rgba(3,14,34,.52)'; ctx.fill();
   ctx.strokeStyle='rgba(170,215,255,.30)'; ctx.lineWidth=1; ctx.stroke();
-  ctx.font='600 11.5px "IBM Plex Mono"'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='700 11.5px "Alegreya Sans"'; ctx.letterSpacing='1.5px';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillStyle='#cfe6ff';
   ctx.fillText(`${p.wd.toUpperCase()} ${p.mon.toUpperCase()} ${p.day}`, C, y+h/2+0.5);
+  ctx.letterSpacing='0px';
 }
 
 function drawLubber(){
