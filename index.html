@@ -333,12 +333,20 @@ const monthNum = m => MONTHS[m] ?? 0;
 
 /* ============================== canvas ============================== */
 const canvas = document.getElementById('dial');
-const ctx = canvas.getContext('2d');
+const mainCtx = canvas.getContext('2d');
 const S = 760, C = S/2;
 const dpr = Math.min(window.devicePixelRatio||1, 2.5);
 canvas.width = S*dpr; canvas.height = S*dpr;
-ctx.scale(dpr,dpr);
+mainCtx.scale(dpr,dpr);
+/* rings are static between state changes — cache them offscreen so the
+   globe can animate without re-rendering every bezel each frame */
+const ringsCanvas = document.createElement('canvas');
+ringsCanvas.width = S*dpr; ringsCanvas.height = S*dpr;
+const ringsCtx = ringsCanvas.getContext('2d');
+ringsCtx.scale(dpr,dpr);
+let ctx = mainCtx;   // draw helpers target whichever layer is active
 const TAU = Math.PI*2;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const CASE_R = 372, CASE_W = 20, RING_OUT = CASE_R - CASE_W, HUB_R = 122;
 
@@ -552,74 +560,107 @@ function drawRing(i, st, count){
   return {rOut, rIn};
 }
 
-function drawHub(){
-  // bevel
+function drawHubBezel(){ // static steel bezel + dark well the globe sits in
   ctx.save();
   ctx.beginPath(); ctx.arc(C,C,HUB_R,0,TAU);
   const bg = ctx.createLinearGradient(C-HUB_R,C-HUB_R,C+HUB_R,C+HUB_R);
   bg.addColorStop(0,'#585d64'); bg.addColorStop(.5,'#191c20'); bg.addColorStop(1,'#43474e');
   ctx.fillStyle=bg; ctx.fill();
-  // face — radial brushed steel
-  ctx.beginPath(); ctx.arc(C,C,HUB_R-6,0,TAU);
-  const fg = ctx.createRadialGradient(C-30,C-40,10, C,C,HUB_R);
-  fg.addColorStop(0,'#d7dbe0'); fg.addColorStop(.45,'#aab0b8');
-  fg.addColorStop(.8,'#82878f'); fg.addColorStop(1,'#6a6f77');
-  ctx.fillStyle=fg; ctx.fill();
-  // circular brushing
-  ctx.save();
-  ctx.beginPath(); ctx.arc(C,C,HUB_R-6,0,TAU); ctx.clip();
-  const rnd = seeded(4242);
-  ctx.lineWidth=1;
-  for (let k=0;k<26;k++){
-    const rr = 12 + rnd()*(HUB_R-20);
-    ctx.strokeStyle = rnd()>0.5 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.08)';
-    ctx.beginPath(); ctx.arc(C,C,rr,0,TAU); ctx.stroke();
-  }
+  ctx.beginPath(); ctx.arc(C,C,HUB_R-5,0,TAU);
+  ctx.fillStyle='#04070d'; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.16)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(C,C,HUB_R-5,0,TAU); ctx.stroke();
   ctx.restore();
-  ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.arc(C,C,HUB_R-5.4,0,TAU); ctx.stroke();
+}
 
-  const steel = {dark:'#2a2d33', light:'rgba(255,255,255,.5)'};
+function drawGlobe(theta){
+  const R = HUB_R - 9;
+  const tilt = -0.40, ct = Math.cos(tilt), st = Math.sin(tilt);
+  const proj = (lat, lon)=>{
+    const cl = Math.cos(lat);
+    const x = cl*Math.sin(lon+theta), y = Math.sin(lat), z = cl*Math.cos(lon+theta);
+    return [C + x*(R-2), C - (y*ct - z*st)*(R-2), y*st + z*ct];
+  };
+  const seg = (pts, test, color, w)=>{
+    ctx.strokeStyle=color; ctx.lineWidth=w; ctx.beginPath();
+    let pen=false;
+    for (const [X,Y,z] of pts){
+      if (test(z)){ pen ? ctx.lineTo(X,Y) : ctx.moveTo(X,Y); pen=true; }
+      else pen=false;
+    }
+    ctx.stroke();
+  };
+  // build graticule polylines
+  const meridians=[], parallels=[];
+  for (let k=0;k<12;k++){
+    const lon = k*TAU/12, pts=[];
+    for (let d=-86; d<=86; d+=4) pts.push(proj(d*Math.PI/180, lon));
+    meridians.push(pts);
+  }
+  for (const d of [-60,-30,0,30,60]){
+    const lat = d*Math.PI/180, pts=[];
+    for (let l=0; l<=360; l+=4) pts.push(proj(lat, l*Math.PI/180));
+    parallels.push({pts, eq: d===0});
+  }
+  ctx.save();
+  // glass sphere
+  ctx.beginPath(); ctx.arc(C,C,R,0,TAU);
+  const g = ctx.createRadialGradient(C-R*0.38, C-R*0.48, R*0.08, C, C, R);
+  g.addColorStop(0,'#69b2e8'); g.addColorStop(.3,'#2c68ac');
+  g.addColorStop(.65,'#143c74'); g.addColorStop(1,'#091a38');
+  ctx.fillStyle=g; ctx.fill();
+  ctx.clip();
+  // graticule seen through the glass (back), then front
+  for (const p of meridians) seg(p, z=>z<0, 'rgba(110,180,250,.10)', 1);
+  for (const p of parallels) seg(p.pts, z=>z<0, 'rgba(110,180,250,.09)', p.eq?1.2:1);
+  for (const p of meridians) seg(p, z=>z>=0, 'rgba(150,214,255,.32)', 1);
+  for (const p of parallels) seg(p.pts, z=>z>=0,
+    p.eq ? 'rgba(180,228,255,.48)' : 'rgba(150,214,255,.30)', p.eq?1.3:1);
+  // limb depth
+  const lg = ctx.createRadialGradient(C,C,R*0.55, C,C,R);
+  lg.addColorStop(0,'rgba(3,10,26,0)'); lg.addColorStop(1,'rgba(3,10,26,.58)');
+  ctx.fillStyle=lg; ctx.fillRect(C-R,C-R,R*2,R*2);
+  // specular bloom + hard glint
+  const sp = ctx.createRadialGradient(C-R*0.42, C-R*0.52, 2, C-R*0.42, C-R*0.52, R*0.55);
+  sp.addColorStop(0,'rgba(255,255,255,.5)'); sp.addColorStop(.35,'rgba(255,255,255,.12)');
+  sp.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=sp; ctx.fillRect(C-R,C-R,R*2,R*2);
+  ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.arc(C,C,R-7, Math.PI*1.18, Math.PI*1.34); ctx.stroke();
+  // rim light low-right, as glass catches the leather's warmth
+  ctx.strokeStyle='rgba(150,200,255,.22)'; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(C,C,R-1.5, Math.PI*0.12, Math.PI*0.46); ctx.stroke();
+  ctx.restore();
+  // hard glass edge
+  ctx.strokeStyle='rgba(185,225,255,.30)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(C,C,R,0,TAU); ctx.stroke();
+}
+
+function drawHubText(){ // etched into the glass
+  const etch = (txt, y, size, family, weight, fill)=>{
+    ctx.font=`${weight} ${size}px ${family}`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(0,12,34,.75)'; ctx.fillText(txt, C, y+1.2);
+    ctx.fillStyle=fill; ctx.fillText(txt, C, y);
+  };
   const ms = snappedSel();
   const home = stations[0];
   const p = tzParts(home.tz, ms);
-
-  engraveText('MERIDIAN', C, C-64, 15, 'Cinzel', steel, 700);
-  ctx.save(); ctx.font='500 8.5px "IBM Plex Mono"'; ctx.letterSpacing='2px';
-  ctx.textAlign='center'; ctx.fillStyle='rgba(0,0,0,.45)';
-  ctx.fillText('WORLD - TIME', C, C-48);
-  ctx.restore();
-
-  engraveText(fmtTime(home.tz, ms), C, C-6, 34, '"IBM Plex Mono"', steel, 600);
-  engraveText(home.name.toUpperCase(), C, C+24, 10.5, 'Cinzel', steel, 600);
-
-  // date window
-  const w=86, h=24, y=C+42;
+  etch('MERIDIAN', C-64, 15, 'Cinzel', 700, 'rgba(234,246,255,.92)');
+  etch('W O R L D · T I M E', C-48, 8, '"IBM Plex Mono"', 500, 'rgba(190,222,250,.55)');
   ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(C-w/2, y, w, h, 4);
-  ctx.fillStyle='#f4ecd6'; ctx.fill();
-  ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=1.5; ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.roundRect(C-w/2-1.5, y-1.5, w+3, h+3, 5); ctx.stroke();
-  ctx.font='600 12.5px "IBM Plex Mono"'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillStyle='#241c0d';
+  ctx.shadowColor='rgba(90,170,255,.55)'; ctx.shadowBlur=12;
+  etch(fmtTime(home.tz, ms), C-6, 34, '"IBM Plex Mono"', 600, '#f2f8ff');
+  ctx.restore();
+  etch(home.name.toUpperCase(), C+24, 10.5, 'Cinzel', 600, 'rgba(214,236,255,.78)');
+  // date on a smoked-glass pill
+  const w=94, h=21, y=C+42;
+  ctx.beginPath(); ctx.roundRect(C-w/2, y, w, h, 10.5);
+  ctx.fillStyle='rgba(3,14,34,.52)'; ctx.fill();
+  ctx.strokeStyle='rgba(170,215,255,.30)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.font='600 11.5px "IBM Plex Mono"'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#cfe6ff';
   ctx.fillText(`${p.wd.toUpperCase()} ${p.mon.toUpperCase()} ${p.day}`, C, y+h/2+0.5);
-  ctx.restore();
-
-  // two slotted screws
-  for (const sa of [Math.PI*0.78, Math.PI*1.78]){
-    const sx=C+Math.cos(sa)*(HUB_R-18), sy=C+Math.sin(sa)*(HUB_R-18);
-    ctx.beginPath(); ctx.arc(sx,sy,4.4,0,TAU);
-    const sg=ctx.createRadialGradient(sx-1.4,sy-1.4,0.5,sx,sy,4.6);
-    sg.addColorStop(0,'#e8ebee'); sg.addColorStop(.6,'#9aa0a8'); sg.addColorStop(1,'#4c5057');
-    ctx.fillStyle=sg; ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=1;
-    ctx.save(); ctx.translate(sx,sy); ctx.rotate(sa*1.7);
-    ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(3,0); ctx.stroke();
-    ctx.restore();
-  }
-  ctx.restore();
 }
 
 function drawLubber(){
@@ -663,12 +704,28 @@ function drawGlass(){
   ctx.restore();
 }
 
-function draw(){
+function rebuildRings(){
+  ctx = ringsCtx;
   ctx.clearRect(0,0,S,S);
   drawCase();
   const n = stations.length;
   for (let i=0;i<n;i++) drawRing(i, stations[i], n);
-  drawHub();
+  drawHubBezel();
+  ctx = mainCtx;
+}
+
+/* globe angle: geared to the scrubbed instant (24 h = one revolution),
+   plus a slow ambient spin so the glass always lives */
+function globeTheta(ts){
+  const base = ((snappedSel()/60000) % 1440) / 1440 * TAU;
+  return base + (REDUCED ? 0 : (ts/90000) * TAU);
+}
+
+function drawFrame(ts){
+  mainCtx.clearRect(0,0,S,S);
+  mainCtx.drawImage(ringsCanvas, 0, 0, S, S);
+  drawGlobe(globeTheta(ts));
+  drawHubText();
   drawLubber();
   drawGlass();
 }
@@ -850,10 +907,17 @@ document.getElementById('btnCopy').addEventListener('click', async e=>{
 });
 
 /* ============================== boot ============================== */
-function update(){ draw(); renderStations(); }
+function update(){
+  rebuildRings();
+  renderStations();
+  if (REDUCED) drawFrame(0);   // otherwise the rAF loop picks the layer up
+}
 setInterval(()=>{ if (following){ sel = Date.now(); update(); } }, 30000);
 
 update();
+if (!REDUCED){
+  requestAnimationFrame(function loop(ts){ drawFrame(ts); requestAnimationFrame(loop); });
+}
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(update);
 </script>
 </body>
