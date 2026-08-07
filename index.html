@@ -138,14 +138,32 @@
     text-shadow:0 1px 0 rgba(255,245,210,.45);
   }
   .plaque-head{
-    display:flex;align-items:baseline;justify-content:space-between;
-    padding-bottom:10px;margin-bottom:6px;
-    border-bottom:1px solid rgba(63,47,16,.45);
-    box-shadow:0 1px 0 rgba(255,245,210,.35);
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:9px;margin-bottom:4px;
+    border-bottom:1px solid rgba(63,47,16,.42);
+    box-shadow:0 1px 0 rgba(255,245,210,.3);
   }
-  .plaque-head h1{
-    font-family:"Cormorant SC",serif;font-weight:700;font-size:22px;letter-spacing:.18em;
+  .plaque-head h1{ /* stamped panel label, not a headline */
+    font-family:"Cormorant SC",serif;font-weight:700;font-size:12.5px;
+    letter-spacing:.34em;text-indent:.34em;
   }
+  .mode-group{display:inline-flex;align-items:center;gap:8px}
+  .btn-now{ /* appears only while the instrument is SET */
+    display:none;align-items:center;
+    padding:3px 9px 4px;border-radius:5px;cursor:pointer;
+    font-family:"Alegreya Sans",sans-serif;font-size:9.5px;font-weight:700;
+    letter-spacing:.14em;color:#42300f;text-shadow:0 1px 0 rgba(255,245,210,.5);
+    border:1px solid rgba(63,47,16,.7);
+    background:linear-gradient(180deg,#e2cb92,#b3924f 60%,#96773a);
+    box-shadow:0 1px 2px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,248,220,.7),
+               inset 0 -1px 2px rgba(63,47,16,.4);
+  }
+  .mode-ap.set + .btn-now{display:inline-flex}
+  .btn-now:hover{filter:brightness(1.08)}
+  .btn-now:active{
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.45);transform:translateY(1px);
+  }
+  .btn-now:focus-visible{outline:2px solid #42300f;outline-offset:2px}
   .mode-ap{ /* chronometer flag aperture: recessed window, backlit text */
     display:inline-flex;align-items:center;justify-content:center;
     min-width:44px;padding:3px 10px 4px;border-radius:5px;
@@ -157,15 +175,15 @@
     color:#e9d79f;text-shadow:0 0 7px rgba(240,210,140,.4);
   }
   .mode-ap.set{color:#dda45e;text-shadow:0 0 7px rgba(230,160,80,.45)}
-  /* search */
-  .search{position:relative;margin:12px 0 10px}
+  /* search — quiet utility slot beneath the list */
+  .search{position:relative;margin:8px 0 0}
   .search input{
-    width:100%;padding:9px 12px 8px;
-    font-family:"Cormorant",serif;font-size:16.5px;font-weight:500;color:var(--ivory);
-    background:linear-gradient(180deg,#241d12,#332a1a);
-    border:1px solid rgba(63,47,16,.9);
-    border-radius:6px;
-    box-shadow:inset 0 2px 5px rgba(0,0,0,.65), 0 1px 0 rgba(255,245,210,.4);
+    width:100%;padding:6px 11px 6px;
+    font-family:"Cormorant",serif;font-size:15px;font-weight:500;color:var(--ivory);
+    background:linear-gradient(180deg,rgba(32,25,15,.72),rgba(46,37,22,.66));
+    border:1px solid rgba(63,47,16,.75);
+    border-radius:5px;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.5), 0 1px 0 rgba(255,245,210,.32);
   }
   .search input::placeholder{color:rgba(239,226,189,.45);font-style:italic}
   .search input:focus{outline:2px solid rgba(63,47,16,.6);outline-offset:1px}
@@ -193,14 +211,21 @@
     box-shadow:0 1px 0 rgba(255,245,210,.28);
   }
   .stations li:last-child{border-bottom:0;box-shadow:none}
-  .stations li.hover{background:rgba(255,245,210,.22);border-radius:4px}
-  .stations .flag{font-size:16px;filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
+  .stations li.hover{ /* polished sheen, as if the row catches the light */
+    background:linear-gradient(90deg, rgba(255,246,215,0), rgba(255,246,215,.30) 28%,
+               rgba(255,246,215,.14) 72%, rgba(255,246,215,0));
+    border-radius:4px;
+  }
+  .stations .idx{ /* ring register: I = outermost bezel */
+    flex:none;width:17px;text-align:center;
+    font-family:"Cormorant",serif;font-weight:700;font-size:12.5px;
+    color:rgba(63,47,16,.55);text-shadow:0 1px 0 rgba(255,245,210,.35);
+  }
+  .stations .flag{font-size:19px;filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
   .stations .name{
     font-family:"Cormorant SC",serif;font-weight:600;font-size:16.5px;letter-spacing:.07em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .stations .swatch{width:8px;height:8px;border-radius:50%;flex:none;
-    box-shadow:inset 0 0 0 1px rgba(63,47,16,.6)}
   .stations .loc{
     display:flex;flex-direction:column;gap:1px;min-width:0;
   }
@@ -233,14 +258,25 @@
     background:rgba(63,47,16,.8);color:#f0dfae;
     box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
   }
-  .stations .rm{
-    border:0;background:none;cursor:pointer;flex:none;
-    width:28px;height:28px;border-radius:50%;
-    color:rgba(63,47,16,.55);font-size:14px;line-height:1;
+  .stations .rm{ /* engraved cross in a shallow brass collar */
+    border:1px solid rgba(63,47,16,.4);cursor:pointer;flex:none;
+    width:17px;height:17px;border-radius:50%;
+    color:rgba(63,47,16,.85);font-size:9.5px;line-height:1;font-weight:700;
     font-family:"Alegreya Sans",sans-serif;
     display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg, rgba(150,119,58,.35), rgba(122,92,38,.28));
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.3), 0 1px 0 rgba(255,248,220,.4);
+    text-shadow:0 1px 0 rgba(255,245,210,.45);
+    opacity:.5;transition:opacity .15s, filter .15s;
+    margin-left:4px;
   }
-  .stations .rm:hover{color:#7c1f1f;background:rgba(63,47,16,.15)}
+  .stations li:hover .rm{opacity:1}
+  .stations .rm:hover{filter:brightness(1.15)}
+  .stations .rm:active{
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.5);
+    transform:translateY(1px);
+  }
+  .stations .rm:focus-visible{outline:2px solid #42300f;outline-offset:2px;opacity:1}
   /* buttons */
   .controls{display:flex;gap:14px;margin-top:18px;padding:0 2px}
   .btn{ /* black-lacquer cap in a brass bezel, telegraph-console style */
@@ -298,19 +334,21 @@
 
     <div class="plaque-head">
       <h1 class="engraved">STATIONS</h1>
-      <span class="mode-ap" id="modeLamp"><span id="modeText">LIVE</span></span>
-    </div>
-
-    <div class="search">
-      <input id="searchInput" type="text" placeholder="Add a city…" autocomplete="off"
-             aria-label="Search for a city to add">
-      <div class="results" id="searchResults" role="listbox"></div>
+      <span class="mode-group">
+        <span class="mode-ap" id="modeLamp"><span id="modeText">LIVE</span></span>
+        <button class="btn-now" id="btnNow" title="Return to the current time">↩ NOW</button>
+      </span>
     </div>
 
     <ul class="stations" id="stationList"></ul>
 
+    <div class="search">
+      <input id="searchInput" type="text" placeholder="+ Add a city…" autocomplete="off"
+             aria-label="Search for a city to add">
+      <div class="results" id="searchResults" role="listbox"></div>
+    </div>
+
     <div class="controls">
-      <button class="btn" id="btnNow">NOW</button>
       <button class="btn" id="btnBest">BEST&nbsp;TIME</button>
       <button class="btn" id="btnCopy">COPY</button>
     </div>
@@ -458,8 +496,8 @@ function skyAt(h){
   const t = (h - a[0]) / (b[0] - a[0]);
   return `rgb(${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)},${Math.round(a[3]+(b[3]-a[3])*t)})`;
 }
-/* accent dots used on the plaque to tie rows to rings */
-const RINGDOT = ['#c9a668','#b9bec6','#c9a668','#b9bec6','#c9a668','#b9bec6'];
+/* ring register numerals: I = outermost bezel */
+const RING_NUM = ['I','II','III','IV','V','VI'];
 
 /* deterministic brushed-metal stops */
 function seeded(seed){ let s=seed; return ()=>{ s=(s*1664525+1013904223)>>>0; return s/2**32; }; }
@@ -943,7 +981,24 @@ function drawHubText(){ // etched into the glass
   etch('W O R L D · T I M E', C-47, 8, '"Alegreya Sans"', 700, 'rgba(190,222,250,.55)');
   ctx.save();
   ctx.shadowColor='rgba(90,170,255,.55)'; ctx.shadowBlur=12;
-  etch(fmtTime(home.tz, ms), C-6, 40, 'Cormorant', 600, '#f2f8ff');
+  {
+    const [tn, tm] = fmtTime(home.tz, ms).split(/\s+/);
+    const y = C-6;
+    ctx.textBaseline='middle'; ctx.textAlign='left';
+    ctx.font='600 40px Cormorant';
+    const wN = ctx.measureText(tn).width;
+    ctx.font='700 19px Cormorant';
+    const wM = tm ? ctx.measureText(tm).width : 0;
+    const gap = tm ? 7 : 0, x0 = C-(wN+gap+wM)/2;
+    ctx.font='600 40px Cormorant';
+    ctx.fillStyle='rgba(0,12,34,.75)'; ctx.fillText(tn, x0, y+1.2);
+    ctx.fillStyle='#f2f8ff'; ctx.fillText(tn, x0, y);
+    if (tm){
+      ctx.font='700 19px Cormorant';
+      ctx.fillStyle='rgba(0,12,34,.75)'; ctx.fillText(tm, x0+wN+gap, y+8.2);
+      ctx.fillStyle='rgba(242,248,255,.88)'; ctx.fillText(tm, x0+wN+gap, y+7);
+    }
+  }
   ctx.restore();
   ctx.letterSpacing='2px';
   etch(home.name.toUpperCase(), C+24, 12.5, 'Cormorant', 600, 'rgba(214,236,255,.78)');
@@ -1108,7 +1163,7 @@ function renderStations(){
     const p = tzParts(st.tz, ms);
     const [tnum, tmer] = fmtTime(st.tz, ms).split(/\s+/);
     li.innerHTML = `
-      <span class="swatch" style="background:${RINGDOT[i]}"></span>
+      <span class="idx" aria-hidden="true">${RING_NUM[i]||''}</span>
       <span class="flag">${st.cc?flagOf(st.cc):'◦'}</span>
       <span class="loc">
         <span class="name engraved">${st.name}</span>
@@ -1165,7 +1220,7 @@ function addCity(c){
     return;
   }
   stations.push(c);
-  input.value=''; input.placeholder='Add a city…';
+  input.value=''; input.placeholder='+ Add a city…';
   results.classList.remove('open'); selIdx=0;
   update();
 }
