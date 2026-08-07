@@ -158,8 +158,14 @@
   }
   .stations .swatch{width:8px;height:8px;border-radius:50%;flex:none;
     box-shadow:inset 0 0 0 1px rgba(63,47,16,.6)}
-  .stations .time{
+  .stations .sun{
     margin-left:auto;
+    font-size:12px;width:15px;text-align:center;
+    color:rgba(63,47,16,.75);
+  }
+  .stations .time{margin-left:auto}
+  .stations .sun + .time{margin-left:0}
+  .stations .time{
     font-family:"Cormorant",serif;font-size:17px;font-weight:600;
     font-variant-numeric:lining-nums tabular-nums;white-space:nowrap;
   }
@@ -244,41 +250,41 @@
 'use strict';
 /* ============================== data ============================== */
 const CITIES = [
-  ["Honolulu","US","Pacific/Honolulu"],["Anchorage","US","America/Anchorage"],
-  ["Los Angeles","US","America/Los_Angeles"],["San Francisco","US","America/Los_Angeles"],
-  ["Seattle","US","America/Los_Angeles"],["Vancouver","CA","America/Vancouver"],
-  ["Denver","US","America/Denver"],["Chicago","US","America/Chicago"],
-  ["Mexico City","MX","America/Mexico_City"],["New York City","US","America/New_York"],
-  ["Toronto","CA","America/Toronto"],["Bogotá","CO","America/Bogota"],
-  ["Lima","PE","America/Lima"],["Santiago","CL","America/Santiago"],
-  ["São Paulo","BR","America/Sao_Paulo"],["Buenos Aires","AR","America/Argentina/Buenos_Aires"],
-  ["Reykjavík","IS","Atlantic/Reykjavik"],["London","GB","Europe/London"],
-  ["Dublin","IE","Europe/Dublin"],["Lisbon","PT","Europe/Lisbon"],
-  ["Casablanca","MA","Africa/Casablanca"],["Madrid","ES","Europe/Madrid"],
-  ["Paris","FR","Europe/Paris"],["Brussels","BE","Europe/Brussels"],
-  ["Amsterdam","NL","Europe/Amsterdam"],["Zurich","CH","Europe/Zurich"],
-  ["Rome","IT","Europe/Rome"],["Berlin","DE","Europe/Berlin"],
-  ["Copenhagen","DK","Europe/Copenhagen"],["Oslo","NO","Europe/Oslo"],
-  ["Stockholm","SE","Europe/Stockholm"],["Helsinki","FI","Europe/Helsinki"],
-  ["Warsaw","PL","Europe/Warsaw"],["Prague","CZ","Europe/Prague"],
-  ["Vienna","AT","Europe/Vienna"],["Athens","GR","Europe/Athens"],
-  ["Istanbul","TR","Europe/Istanbul"],["Kyiv","UA","Europe/Kyiv"],
-  ["Moscow","RU","Europe/Moscow"],["Tel Aviv","IL","Asia/Jerusalem"],
-  ["Cairo","EG","Africa/Cairo"],["Lagos","NG","Africa/Lagos"],
-  ["Nairobi","KE","Africa/Nairobi"],["Johannesburg","ZA","Africa/Johannesburg"],
-  ["Cape Town","ZA","Africa/Johannesburg"],["Dubai","AE","Asia/Dubai"],
-  ["Karachi","PK","Asia/Karachi"],["Mumbai","IN","Asia/Kolkata"],
-  ["Delhi","IN","Asia/Kolkata"],["Bangalore","IN","Asia/Kolkata"],
-  ["Dhaka","BD","Asia/Dhaka"],["Bangkok","TH","Asia/Bangkok"],
-  ["Jakarta","ID","Asia/Jakarta"],["Singapore","SG","Asia/Singapore"],
-  ["Hong Kong","HK","Asia/Hong_Kong"],["Shanghai","CN","Asia/Shanghai"],
-  ["Beijing","CN","Asia/Shanghai"],["Taipei","TW","Asia/Taipei"],
-  ["Manila","PH","Asia/Manila"],["Seoul","KR","Asia/Seoul"],
-  ["Tokyo","JP","Asia/Tokyo"],["Osaka","JP","Asia/Tokyo"],
-  ["Perth","AU","Australia/Perth"],["Brisbane","AU","Australia/Brisbane"],
-  ["Sydney","AU","Australia/Sydney"],["Melbourne","AU","Australia/Melbourne"],
-  ["Auckland","NZ","Pacific/Auckland"],["Wellington","NZ","Pacific/Wellington"],
-].map(([name,cc,tz])=>({name,cc,tz}));
+  ["Honolulu","US","Pacific/Honolulu",21.3,-157.9],["Anchorage","US","America/Anchorage",61.2,-149.9],
+  ["Los Angeles","US","America/Los_Angeles",34.1,-118.2],["San Francisco","US","America/Los_Angeles",37.8,-122.4],
+  ["Seattle","US","America/Los_Angeles",47.6,-122.3],["Vancouver","CA","America/Vancouver",49.3,-123.1],
+  ["Denver","US","America/Denver",39.7,-105.0],["Chicago","US","America/Chicago",41.9,-87.6],
+  ["Mexico City","MX","America/Mexico_City",19.4,-99.1],["New York City","US","America/New_York",40.7,-74.0],
+  ["Toronto","CA","America/Toronto",43.7,-79.4],["Bogotá","CO","America/Bogota",4.7,-74.1],
+  ["Lima","PE","America/Lima",-12.0,-77.0],["Santiago","CL","America/Santiago",-33.4,-70.7],
+  ["São Paulo","BR","America/Sao_Paulo",-23.6,-46.6],["Buenos Aires","AR","America/Argentina/Buenos_Aires",-34.6,-58.4],
+  ["Reykjavík","IS","Atlantic/Reykjavik",64.1,-21.9],["London","GB","Europe/London",51.5,-0.1],
+  ["Dublin","IE","Europe/Dublin",53.3,-6.3],["Lisbon","PT","Europe/Lisbon",38.7,-9.1],
+  ["Casablanca","MA","Africa/Casablanca",33.6,-7.6],["Madrid","ES","Europe/Madrid",40.4,-3.7],
+  ["Paris","FR","Europe/Paris",48.9,2.4],["Brussels","BE","Europe/Brussels",50.8,4.4],
+  ["Amsterdam","NL","Europe/Amsterdam",52.4,4.9],["Zurich","CH","Europe/Zurich",47.4,8.5],
+  ["Rome","IT","Europe/Rome",41.9,12.5],["Berlin","DE","Europe/Berlin",52.5,13.4],
+  ["Copenhagen","DK","Europe/Copenhagen",55.7,12.6],["Oslo","NO","Europe/Oslo",59.9,10.8],
+  ["Stockholm","SE","Europe/Stockholm",59.3,18.1],["Helsinki","FI","Europe/Helsinki",60.2,24.9],
+  ["Warsaw","PL","Europe/Warsaw",52.2,21.0],["Prague","CZ","Europe/Prague",50.1,14.4],
+  ["Vienna","AT","Europe/Vienna",48.2,16.4],["Athens","GR","Europe/Athens",38.0,23.7],
+  ["Istanbul","TR","Europe/Istanbul",41.0,29.0],["Kyiv","UA","Europe/Kyiv",50.5,30.5],
+  ["Moscow","RU","Europe/Moscow",55.8,37.6],["Tel Aviv","IL","Asia/Jerusalem",32.1,34.8],
+  ["Cairo","EG","Africa/Cairo",30.0,31.2],["Lagos","NG","Africa/Lagos",6.5,3.4],
+  ["Nairobi","KE","Africa/Nairobi",-1.3,36.8],["Johannesburg","ZA","Africa/Johannesburg",-26.2,28.0],
+  ["Cape Town","ZA","Africa/Johannesburg",-33.9,18.4],["Dubai","AE","Asia/Dubai",25.2,55.3],
+  ["Karachi","PK","Asia/Karachi",24.9,67.0],["Mumbai","IN","Asia/Kolkata",19.1,72.9],
+  ["Delhi","IN","Asia/Kolkata",28.6,77.2],["Bangalore","IN","Asia/Kolkata",13.0,77.6],
+  ["Dhaka","BD","Asia/Dhaka",23.8,90.4],["Bangkok","TH","Asia/Bangkok",13.8,100.5],
+  ["Jakarta","ID","Asia/Jakarta",-6.2,106.8],["Singapore","SG","Asia/Singapore",1.4,103.8],
+  ["Hong Kong","HK","Asia/Hong_Kong",22.3,114.2],["Shanghai","CN","Asia/Shanghai",31.2,121.5],
+  ["Beijing","CN","Asia/Shanghai",39.9,116.4],["Taipei","TW","Asia/Taipei",25.0,121.6],
+  ["Manila","PH","Asia/Manila",14.6,121.0],["Seoul","KR","Asia/Seoul",37.6,127.0],
+  ["Tokyo","JP","Asia/Tokyo",35.7,139.7],["Osaka","JP","Asia/Tokyo",34.7,135.5],
+  ["Perth","AU","Australia/Perth",-31.9,115.9],["Brisbane","AU","Australia/Brisbane",-27.5,153.0],
+  ["Sydney","AU","Australia/Sydney",-33.9,151.2],["Melbourne","AU","Australia/Melbourne",-37.8,145.0],
+  ["Auckland","NZ","Pacific/Auckland",-36.8,174.8],["Wellington","NZ","Pacific/Wellington",-41.3,174.8],
+].map(([name,cc,tz,lat,lon])=>({name,cc,tz,lat,lon}));
 
 const flagOf = cc => String.fromCodePoint(...[...cc].map(c=>0x1F1E6 + c.charCodeAt(0) - 65));
 
@@ -576,9 +582,40 @@ function drawHubBezel(){ // static steel bezel + dark well the globe sits in
   ctx.restore();
 }
 
-function drawGlobe(theta){
+/* mean sun position: declination from day-of-year, subsolar longitude
+   from UTC time (ignores equation of time — worst case ~15 min) */
+function sunPosition(ms){
+  const d = new Date(ms);
+  const N = (Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+           - Date.UTC(d.getUTCFullYear(), 0, 0)) / 864e5;
+  const decl = -23.44*Math.PI/180 * Math.cos(TAU*(N+10)/365);
+  const utcH = d.getUTCHours() + d.getUTCMinutes()/60;
+  const lams = (180 - 15*utcH) * Math.PI/180;
+  return {decl, lams};
+}
+/* daylight test for a city, independent of globe rotation */
+function cityDaylight(st, sun){
+  const la = st.lat*Math.PI/180, lo = st.lon*Math.PI/180;
+  return Math.cos(sun.decl)*Math.cos(la)*Math.cos(lo - sun.lams)
+       + Math.sin(sun.decl)*Math.sin(la);
+}
+
+/* low-res buffer for the terminator shading, upscaled over the sphere */
+const SHADE_N = 144;
+const shadeCanvas = document.createElement('canvas');
+shadeCanvas.width = shadeCanvas.height = SHADE_N;
+const shadeCtx = shadeCanvas.getContext('2d');
+const shadeImg = shadeCtx.createImageData(SHADE_N, SHADE_N);
+
+function drawGlobe(theta, ms){
   const R = HUB_R - 9;
   const tilt = -0.40, ct = Math.cos(tilt), st = Math.sin(tilt);
+  const sun = sunPosition(ms);
+  // sun direction in view space (same lon-rotation + tilt as proj)
+  const cd = Math.cos(sun.decl), sd = Math.sin(sun.decl);
+  const sx = cd*Math.sin(sun.lams+theta);
+  const sy = sd*ct - cd*Math.cos(sun.lams+theta)*st;
+  const sz = sd*st + cd*Math.cos(sun.lams+theta)*ct;
   const proj = (lat, lon)=>{
     const cl = Math.cos(lat);
     const x = cl*Math.sin(lon+theta), y = Math.sin(lat), z = cl*Math.cos(lon+theta);
@@ -613,12 +650,65 @@ function drawGlobe(theta){
   g.addColorStop(.65,'#143c74'); g.addColorStop(1,'#091a38');
   ctx.fillStyle=g; ctx.fill();
   ctx.clip();
-  // graticule seen through the glass (back), then front
+  // graticule seen through the glass (back)
   for (const p of meridians) seg(p, z=>z<0, 'rgba(110,180,250,.10)', 1);
   for (const p of parallels) seg(p.pts, z=>z<0, 'rgba(110,180,250,.09)', p.eq?1.2:1);
+  // night hemisphere + twilight band at the terminator
+  {
+    const data = shadeImg.data;
+    let idx = 0;
+    for (let j=0;j<SHADE_N;j++){
+      const ny = (j+0.5-SHADE_N/2)/(SHADE_N/2);
+      for (let i=0;i<SHADE_N;i++){
+        const nx = (i+0.5-SHADE_N/2)/(SHADE_N/2);
+        const rr = nx*nx+ny*ny;
+        if (rr>1){ data[idx+3]=0; idx+=4; continue; }
+        const nz = Math.sqrt(1-rr);
+        const t = nx*sx - ny*sy + nz*sz;          // screen y points down
+        const tw = Math.max(0, 1-Math.abs(t)/0.09);
+        const night = t<0 ? Math.min(1,-t*3.2) : 0;
+        data[idx]   = 6 + 190*tw*0.9;
+        data[idx+1] = 13 + 85*tw*0.9;
+        data[idx+2] = 34 + 20*tw;
+        data[idx+3] = Math.max(night*160, tw*80);
+        idx+=4;
+      }
+    }
+    shadeCtx.putImageData(shadeImg,0,0);
+    ctx.drawImage(shadeCanvas, C-R, C-R, R*2, R*2);
+  }
+  // graticule front
   for (const p of meridians) seg(p, z=>z>=0, 'rgba(150,214,255,.32)', 1);
   for (const p of parallels) seg(p.pts, z=>z>=0,
     p.eq ? 'rgba(180,228,255,.48)' : 'rgba(150,214,255,.30)', p.eq?1.3:1);
+  // stations as city points at their true coordinates
+  stations.forEach((st,i)=>{
+    if (st.lat===undefined) return;
+    const la = st.lat*Math.PI/180, lo = st.lon*Math.PI/180;
+    const [X,Y,z] = proj(la, lo);
+    const day = cityDaylight(st, sun) > 0;
+    if (z < 0){ // seen through the glass
+      ctx.beginPath(); ctx.arc(X,Y,2,0,TAU);
+      ctx.fillStyle='rgba(180,210,250,.14)'; ctx.fill();
+      return;
+    }
+    if (i===hoverRing){ // pick out this station's meridian
+      const pts=[]; for (let d2=-86; d2<=86; d2+=4) pts.push(proj(d2*Math.PI/180, lo));
+      seg(pts, zz=>zz>=0, 'rgba(255,216,138,.5)', 1.2);
+    }
+    ctx.beginPath(); ctx.arc(X,Y, i===hoverRing?4.5:3.2, 0,TAU);
+    if (day){
+      ctx.save(); ctx.shadowColor='rgba(255,200,110,.95)'; ctx.shadowBlur=9;
+      ctx.fillStyle='#ffd88a'; ctx.fill(); ctx.restore();
+    } else {
+      ctx.fillStyle='rgba(196,220,252,.95)'; ctx.fill();
+    }
+    ctx.strokeStyle='rgba(6,16,40,.8)'; ctx.lineWidth=1; ctx.stroke();
+    if (i===hoverRing){
+      ctx.beginPath(); ctx.arc(X,Y,6.5,0,TAU);
+      ctx.strokeStyle='rgba(255,240,210,.85)'; ctx.lineWidth=1.2; ctx.stroke();
+    }
+  });
   // limb depth
   const lg = ctx.createRadialGradient(C,C,R*0.55, C,C,R);
   lg.addColorStop(0,'rgba(3,10,26,0)'); lg.addColorStop(1,'rgba(3,10,26,.58)');
@@ -733,7 +823,7 @@ function globeTheta(ts){
 function drawFrame(ts){
   mainCtx.clearRect(0,0,S,S);
   mainCtx.drawImage(ringsCanvas, 0, 0, S, S);
-  drawGlobe(globeTheta(ts));
+  drawGlobe(globeTheta(ts), snappedSel());
   drawHubText();
   drawLubber();
   drawGlass();
@@ -804,15 +894,19 @@ function setFollowing(v){
 
 function renderStations(){
   const ms = snappedSel();
+  const sun = sunPosition(ms);
   stationList.innerHTML='';
   stations.forEach((st,i)=>{
     const li = document.createElement('li');
     if (i===hoverRing) li.classList.add('hover');
     const dd = dayDiff(st.tz, ms);
+    const glyph = st.lat===undefined ? '' :
+      `<span class="sun" title="${cityDaylight(st,sun)>0?'daylight':'night'}">${cityDaylight(st,sun)>0?'☀':'☾'}</span>`;
     li.innerHTML = `
       <span class="swatch" style="background:${RINGDOT[i]}"></span>
       <span class="flag">${st.cc?flagOf(st.cc):'◦'}</span>
       <span class="name engraved">${st.name}</span>
+      ${glyph}
       <span class="time engraved">${fmtTime(st.tz, ms)}</span>
       ${dd!==0?`<span class="day">${dd>0?'+':''}${dd}d</span>`:''}
       ${stations.length>1?`<button class="rm" aria-label="Remove ${st.name}">✕</button>`:''}
