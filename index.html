@@ -189,28 +189,44 @@
   }
   .stations .swatch{width:8px;height:8px;border-radius:50%;flex:none;
     box-shadow:inset 0 0 0 1px rgba(63,47,16,.6)}
-  .stations .right{
-    margin-left:auto;display:flex;align-items:center;gap:7px;
+  .stations .loc{
+    display:flex;flex-direction:column;gap:1px;min-width:0;
   }
-  .stations .sun{
-    font-size:12px;width:15px;text-align:center;
-    color:rgba(63,47,16,.75);
+  .stations .zone{
+    font-family:"Alegreya Sans",sans-serif;font-size:9.5px;font-weight:700;
+    letter-spacing:.09em;text-transform:uppercase;
+    color:rgba(63,47,16,.62);text-shadow:0 1px 0 rgba(255,245,210,.35);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .stations .right{
+    margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;
+    flex:none;
   }
   .stations .time{
-    font-family:"Cormorant",serif;font-size:17px;font-weight:600;
+    font-family:"Cormorant",serif;font-size:19px;font-weight:600;line-height:1.05;
     font-variant-numeric:lining-nums tabular-nums;white-space:nowrap;
   }
+  .stations .ampm{
+    font-size:12.5px;font-weight:700;letter-spacing:.06em;
+  }
+  .stations .sub{
+    display:flex;align-items:center;gap:5px;
+    font-family:"Alegreya Sans",sans-serif;font-size:9.5px;font-weight:700;
+    letter-spacing:.09em;color:rgba(63,47,16,.6);
+    text-shadow:0 1px 0 rgba(255,245,210,.35);
+  }
   .stations .day{
-    font-family:"Alegreya Sans",sans-serif;font-size:10px;font-weight:700;
-    padding:2px 5px;border-radius:4px;
+    font-family:"Alegreya Sans",sans-serif;font-size:9px;font-weight:700;
+    padding:1px 4px;border-radius:3px;
     background:rgba(63,47,16,.8);color:#f0dfae;
     box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
   }
   .stations .rm{
     border:0;background:none;cursor:pointer;flex:none;
-    width:20px;height:20px;border-radius:50%;
-    color:rgba(63,47,16,.55);font-size:13px;line-height:1;
+    width:28px;height:28px;border-radius:50%;
+    color:rgba(63,47,16,.55);font-size:14px;line-height:1;
     font-family:"Alegreya Sans",sans-serif;
+    display:flex;align-items:center;justify-content:center;
   }
   .stations .rm:hover{color:#7c1f1f;background:rgba(63,47,16,.15)}
   /* buttons */
@@ -363,6 +379,14 @@ const localMinutes = (tz,ms)=>{ const p=tzParts(tz,ms); return p.h*60+p.m; };
 function fmtTime(tz, ms){
   return new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit',hour12:true})
     .format(ms).replace(/\s/g,' ');
+}
+/* "EDT · GMT−4", or just "GMT+9" where no distinct abbreviation exists */
+function zoneInfo(tz, ms){
+  const nameOf = kind => new Intl.DateTimeFormat('en-US',{timeZone:tz, timeZoneName:kind})
+    .formatToParts(ms).find(p=>p.type==='timeZoneName').value;
+  const off = nameOf('shortOffset').replace('-','−');
+  let ab; try{ ab = nameOf('short').replace('-','−'); }catch{ ab = off; }
+  return (ab && ab!==off) ? `${ab} · ${off}` : off;
 }
 function dayDiff(tz, ms){ // whole days vs the first station's calendar date
   const a = tzParts(stations[0].tz, ms), b = tzParts(tz, ms);
@@ -1054,32 +1078,39 @@ function setFollowing(v){
 
 function renderStations(){
   const ms = snappedSel();
-  const sun = sunPosition(ms);
   stationList.innerHTML='';
   stations.forEach((st,i)=>{
     const li = document.createElement('li');
+    li.dataset.i = i;
     if (i===hoverRing) li.classList.add('hover');
     const dd = dayDiff(st.tz, ms);
-    const glyph = st.lat===undefined ? '' :
-      `<span class="sun" title="${cityDaylight(st,sun)>0?'daylight':'night'}">${cityDaylight(st,sun)>0?'☀':'☾'}</span>`;
+    const p = tzParts(st.tz, ms);
+    const [tnum, tmer] = fmtTime(st.tz, ms).split(/\s+/);
     li.innerHTML = `
       <span class="swatch" style="background:${RINGDOT[i]}"></span>
       <span class="flag">${st.cc?flagOf(st.cc):'◦'}</span>
-      <span class="name engraved">${st.name}</span>
+      <span class="loc">
+        <span class="name engraved">${st.name}</span>
+        <span class="zone">${zoneInfo(st.tz, ms)}</span>
+      </span>
       <span class="right">
-        ${glyph}
-        ${dd!==0?`<span class="day">${dd>0?'+':''}${dd}d</span>`:''}
-        <span class="time engraved">${fmtTime(st.tz, ms)}</span>
+        <span class="time engraved">${tnum} <span class="ampm">${tmer||''}</span></span>
+        <span class="sub">${p.wd.toUpperCase()}${dd!==0?` <span class="day">${dd>0?'+':''}${dd}d</span>`:''}</span>
       </span>
       ${stations.length>1?`<button class="rm" aria-label="Remove ${st.name}">✕</button>`:''}
     `;
     li.addEventListener('mouseenter', ()=>{ hoverRing=i; hoverChanged(); });
     li.addEventListener('mouseleave', ()=>{ hoverRing=-1; hoverChanged(); });
-    const rm = li.querySelector('.rm');
-    if (rm) rm.addEventListener('click', ()=>{ stations.splice(i,1); hoverRing=-1; update(); });
     stationList.appendChild(li);
   });
 }
+/* delegated so a re-render can never orphan the button mid-click */
+stationList.addEventListener('click', e=>{
+  const b = e.target.closest('.rm');
+  if (!b) return;
+  const i = +b.closest('li').dataset.i;
+  stations.splice(i,1); hoverRing=-1; update();
+});
 
 /* search */
 const input = document.getElementById('searchInput');
