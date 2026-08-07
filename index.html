@@ -1090,9 +1090,78 @@ function drawFrame(ts){
   drawGlass();
 }
 
+/* ============================== sound ============================== */
+/* synthesized mechanics — a ratchet tick per detent, a deeper tock when
+   the bezel crosses the live instant, and press/release clicks on controls */
+const Sound = (()=>{
+  let ac=null, noise=null, lastTick=0;
+  const ctx=()=>{
+    const AC = window.AudioContext||window.webkitAudioContext;
+    if (!AC) return null;
+    if (!ac) ac = new AC();
+    if (ac.state==='suspended') ac.resume();
+    return ac;
+  };
+  const noiseBuf=a=>{
+    if (!noise){
+      noise = a.createBuffer(1, a.sampleRate*0.05|0, a.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    }
+    return noise;
+  };
+  const burst=(a,t,f,q,g,dur)=>{
+    const s=a.createBufferSource(); s.buffer=noiseBuf(a);
+    const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=f; bp.Q.value=q;
+    const gn=a.createGain();
+    gn.gain.setValueAtTime(g,t); gn.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+    s.connect(bp); bp.connect(gn); gn.connect(a.destination);
+    s.start(t); s.stop(t+dur+0.01);
+  };
+  const ping=(a,t,f,g,dur,type)=>{
+    const o=a.createOscillator(); o.type=type||'triangle'; o.frequency.value=f;
+    const gn=a.createGain();
+    gn.gain.setValueAtTime(g,t); gn.gain.exponentialRampToValueAtTime(0.0006,t+dur);
+    o.connect(gn); gn.connect(a.destination);
+    o.start(t); o.stop(t+dur+0.01);
+  };
+  return {
+    tick(){ const a=ctx(); if(!a) return;
+      const n=performance.now(); if (n-lastTick<25) return; lastTick=n;
+      const t=a.currentTime;
+      burst(a,t, 3600+Math.random()*1000, 5, .09, .03);
+      ping(a,t, 2300+Math.random()*400, .012, .02, 'square');
+    },
+    tock(){ const a=ctx(); if(!a) return; const t=a.currentTime;
+      burst(a,t, 1050, 3, .14, .06);
+      ping(a,t, 520, .05, .09);
+      ping(a,t+0.005, 1560, .015, .05);
+    },
+    press(){ const a=ctx(); if(!a) return; const t=a.currentTime;
+      burst(a,t, 750, 2.5, .16, .045);
+      ping(a,t, 260, .05, .05);
+    },
+    release(){ const a=ctx(); if(!a) return; const t=a.currentTime;
+      burst(a,t, 1500, 4, .07, .03);
+    },
+  };
+})();
+document.addEventListener('pointerdown', e=>{
+  if (e.target.closest('.btn, .btn-now, .rm, .results button')) Sound.press();
+}, true);
+document.addEventListener('pointerup', e=>{
+  if (e.target.closest('.btn, .btn-now, .rm, .results button')) Sound.release();
+}, true);
+
 /* ============================== interaction ============================== */
 const SNAP = 5*60*1000;
 const snappedSel = ()=> Math.round(sel/SNAP)*SNAP;
+const liveSnap = ()=> Math.round(Date.now()/SNAP)*SNAP;
+/* detent acoustics: a tick per step, the deeper tock on the live instant */
+function detentSound(prevSnap, curSnap){
+  if (curSnap === prevSnap) return;
+  (curSnap === liveSnap()) ? Sound.tock() : Sound.tick();
+}
 
 function pointerAngle(e){
   const r = canvas.getBoundingClientRect();
@@ -1113,8 +1182,10 @@ canvas.addEventListener('pointermove', e=>{
     let d = ang - drag.ang;
     if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU;
     drag.ang = ang;
+    const prevSnap = snappedSel();
     drag.sel += d/TAU * 1440 * 60000;   // dragging clockwise advances time
     sel = drag.sel;
+    detentSound(prevSnap, snappedSel());
     setFollowing(false);
     update();
   } else {
@@ -1138,8 +1209,14 @@ canvas.addEventListener('pointercancel', endDrag);
 canvas.addEventListener('pointerleave', ()=>{ if(hoverRing!==-1){hoverRing=-1;hoverChanged();} });
 canvas.addEventListener('keydown', e=>{
   const step = e.shiftKey ? 60 : 15;
-  if (e.key==='ArrowRight' || e.key==='ArrowUp'){ sel = snappedSel() + step*60000; setFollowing(false); update(); e.preventDefault(); }
-  if (e.key==='ArrowLeft' || e.key==='ArrowDown'){ sel = snappedSel() - step*60000; setFollowing(false); update(); e.preventDefault(); }
+  let dir = 0;
+  if (e.key==='ArrowRight' || e.key==='ArrowUp') dir = 1;
+  if (e.key==='ArrowLeft' || e.key==='ArrowDown') dir = -1;
+  if (!dir) return;
+  const prevSnap = snappedSel();
+  sel = prevSnap + dir*step*60000;
+  detentSound(prevSnap, snappedSel());
+  setFollowing(false); update(); e.preventDefault();
 });
 
 /* ============================== plaque ============================== */
@@ -1240,6 +1317,7 @@ document.addEventListener('click', e=>{
 /* buttons */
 document.getElementById('btnNow').addEventListener('click', ()=>{
   sel = Date.now(); setFollowing(true); update();
+  Sound.tock();
 });
 document.getElementById('btnBest').addEventListener('click', ()=>{
   // score every 15-min slot of the home city's current calendar day
