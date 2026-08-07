@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian — world-time instrument</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --leather-0:#1b140e;
+    --leather-1:#2a2016;
+    --brass-hi:#f3dfae;
+    --brass-mid:#c9a668;
+    --brass-lo:#8a6a30;
+    --brass-dark:#3f2f10;
+    --steel-hi:#eef0f2;
+    --steel-mid:#b9bec6;
+    --steel-lo:#7c828c;
+    --steel-dark:#23262c;
+    --ruby:#c43c3c;
+    --ivory:#efe2bd;
+    --engrave-light:rgba(255,240,205,.32);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1300px 900px at 18% -12%, #3a2d1f 0%, rgba(58,45,31,0) 55%),
+      radial-gradient(1100px 800px at 108% 112%, #221a11 0%, rgba(34,26,17,0) 60%),
+      var(--leather-0);
+    color:var(--ivory);
+    font-family:"Spectral",Georgia,serif;
+    overflow-x:hidden;
+  }
+  body::after{ /* vignette */
+    content:"";position:fixed;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 220px rgba(0,0,0,.55);
+  }
+  .stage{
+    min-height:100%;
+    display:flex;align-items:center;justify-content:center;
+    gap:clamp(24px,4vw,64px);
+    flex-wrap:wrap;
+    padding:clamp(20px,4vw,56px);
+  }
+  /* ---------- Instrument ---------- */
+  .dial-wrap{position:relative;flex:0 1 auto}
+  canvas#dial{
+    display:block;
+    width:min(86vmin,760px);height:min(86vmin,760px);
+    border-radius:50%;
+    filter:drop-shadow(0 34px 60px rgba(0,0,0,.62)) drop-shadow(0 8px 18px rgba(0,0,0,.5));
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  canvas#dial.dragging{cursor:grabbing}
+  canvas#dial:focus-visible{outline:3px solid rgba(243,223,174,.7);outline-offset:6px}
+  /* ---------- Plaque ---------- */
+  .plaque{
+    position:relative;
+    width:min(92vw,368px);
+    padding:26px 24px 22px;
+    border-radius:10px;
+    background:
+      linear-gradient(168deg, #e8cf97 0%, #c9a668 28%, #a9854a 62%, #c9a668 88%, #8a6a30 100%);
+    box-shadow:
+      0 22px 44px rgba(0,0,0,.55),
+      0 4px 10px rgba(0,0,0,.4),
+      inset 0 1px 0 rgba(255,245,215,.75),
+      inset 0 -2px 3px rgba(63,47,16,.55),
+      inset 2px 0 3px rgba(255,240,200,.25),
+      inset -2px 0 4px rgba(63,47,16,.35);
+    color:var(--brass-dark);
+  }
+  .plaque .screw{
+    position:absolute;width:14px;height:14px;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, #f6e7bd 0%, #c9a668 45%, #6f5522 100%);
+    box-shadow:inset 0 -1px 2px rgba(0,0,0,.5), 0 1px 1px rgba(255,245,210,.5);
+  }
+  .plaque .screw::after{
+    content:"";position:absolute;left:1.5px;right:1.5px;top:50%;height:2px;margin-top:-1px;
+    background:linear-gradient(180deg, rgba(40,28,6,.85), rgba(255,240,200,.35));
+    border-radius:2px;transform:rotate(var(--slot,20deg));
+  }
+  .screw.tl{top:8px;left:8px;--slot:24deg}.screw.tr{top:8px;right:8px;--slot:-51deg}
+  .screw.bl{bottom:8px;left:8px;--slot:76deg}.screw.br{bottom:8px;right:8px;--slot:-12deg}
+  .engraved{
+    color:#42300f;
+    text-shadow:0 1px 0 rgba(255,245,210,.45);
+  }
+  .plaque-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding-bottom:10px;margin-bottom:6px;
+    border-bottom:1px solid rgba(63,47,16,.45);
+    box-shadow:0 1px 0 rgba(255,245,210,.35);
+  }
+  .plaque-head h1{
+    font-family:"Cinzel",serif;font-weight:700;font-size:19px;letter-spacing:.14em;
+  }
+  .mode-lamp{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.12em;font-weight:600;
+  }
+  .mode-lamp .bulb{
+    width:9px;height:9px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #d9ffd0, #3f9b46 55%, #1d5423);
+    box-shadow:inset 0 -1px 1px rgba(0,0,0,.5), 0 0 7px rgba(90,220,110,.75);
+  }
+  .mode-lamp.set .bulb{
+    background:radial-gradient(circle at 35% 30%, #ffe9c2, #c98a2e 55%, #6e4711);
+    box-shadow:inset 0 -1px 1px rgba(0,0,0,.5), 0 0 7px rgba(240,180,80,.8);
+  }
+  /* search */
+  .search{position:relative;margin:12px 0 10px}
+  .search input{
+    width:100%;padding:9px 12px 8px;
+    font-family:"Spectral",serif;font-size:15px;color:var(--ivory);
+    background:linear-gradient(180deg,#241d12,#332a1a);
+    border:1px solid rgba(63,47,16,.9);
+    border-radius:6px;
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.65), 0 1px 0 rgba(255,245,210,.4);
+  }
+  .search input::placeholder{color:rgba(239,226,189,.45);font-style:italic}
+  .search input:focus{outline:2px solid rgba(63,47,16,.6);outline-offset:1px}
+  .search .results{
+    position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);
+    background:linear-gradient(180deg,#2b2318,#1d1710);
+    border:1px solid #52401c;border-radius:6px;overflow:hidden;
+    box-shadow:0 14px 30px rgba(0,0,0,.6);
+    display:none;
+  }
+  .search .results.open{display:block}
+  .search .results button{
+    display:flex;width:100%;gap:9px;align-items:center;
+    padding:8px 12px;border:0;background:none;cursor:pointer;
+    font-family:"Spectral",serif;font-size:14.5px;color:var(--ivory);text-align:left;
+  }
+  .search .results button:hover,.search .results button.sel{background:rgba(201,166,104,.22)}
+  .search .results .co{margin-left:auto;font-size:12px;opacity:.55;font-style:italic}
+  /* station rows */
+  .stations{list-style:none}
+  .stations li{
+    display:flex;align-items:center;gap:9px;
+    padding:9px 2px 8px;
+    border-bottom:1px solid rgba(63,47,16,.35);
+    box-shadow:0 1px 0 rgba(255,245,210,.28);
+  }
+  .stations li:last-child{border-bottom:0;box-shadow:none}
+  .stations li.hover{background:rgba(255,245,210,.22);border-radius:4px}
+  .stations .flag{font-size:16px;filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
+  .stations .name{
+    font-family:"Cinzel",serif;font-weight:600;font-size:13.5px;letter-spacing:.05em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .stations .swatch{width:8px;height:8px;border-radius:50%;flex:none;
+    box-shadow:inset 0 0 0 1px rgba(63,47,16,.6)}
+  .stations .time{
+    margin-left:auto;
+    font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .stations .day{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;
+    padding:2px 5px;border-radius:4px;
+    background:rgba(63,47,16,.8);color:#f0dfae;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
+  }
+  .stations .rm{
+    border:0;background:none;cursor:pointer;flex:none;
+    width:20px;height:20px;border-radius:50%;
+    color:rgba(63,47,16,.55);font-size:13px;line-height:1;
+    font-family:"IBM Plex Mono",monospace;
+  }
+  .stations .rm:hover{color:#7c1f1f;background:rgba(63,47,16,.15)}
+  /* buttons */
+  .controls{display:flex;gap:10px;margin-top:16px}
+  .btn{
+    flex:1;padding:9px 4px 8px;
+    font-family:"Cinzel",serif;font-weight:600;font-size:12.5px;letter-spacing:.09em;
+    color:#20242b;cursor:pointer;
+    border-radius:7px;
+    border:1px solid #55595f;
+    background:linear-gradient(180deg,#f2f4f6 0%, #c3c8cf 45%, #9aa0a9 55%, #c9ced5 100%);
+    box-shadow:
+      0 3px 6px rgba(0,0,0,.45),
+      inset 0 1px 0 rgba(255,255,255,.9),
+      inset 0 -2px 3px rgba(35,38,44,.35);
+    text-shadow:0 1px 0 rgba(255,255,255,.6);
+  }
+  .btn:hover{filter:brightness(1.05)}
+  .btn:active{
+    background:linear-gradient(180deg,#aab0b8 0%, #c9ced5 60%, #b3b9c1 100%);
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.35);
+    transform:translateY(1px);
+  }
+  .btn:focus-visible{outline:2px solid #20242b;outline-offset:2px}
+  .plaque-note{
+    margin-top:14px;text-align:center;
+    font-size:11.5px;font-style:italic;color:rgba(63,47,16,.75);
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+  <div class="dial-wrap">
+    <canvas id="dial" width="760" height="760" tabindex="0"
+      aria-label="World-time dial. Drag or use arrow keys to change the meeting time."></canvas>
+  </div>
+
+  <aside class="plaque" aria-label="Stations">
+    <span class="screw tl"></span><span class="screw tr"></span>
+    <span class="screw bl"></span><span class="screw br"></span>
+
+    <div class="plaque-head">
+      <h1 class="engraved">STATIONS</h1>
+      <span class="mode-lamp engraved" id="modeLamp"><span class="bulb"></span><span id="modeText">LIVE</span></span>
+    </div>
+
+    <div class="search">
+      <input id="searchInput" type="text" placeholder="Add a city…" autocomplete="off"
+             aria-label="Search for a city to add">
+      <div class="results" id="searchResults" role="listbox"></div>
+    </div>
+
+    <ul class="stations" id="stationList"></ul>
+
+    <div class="controls">
+      <button class="btn" id="btnNow">NOW</button>
+      <button class="btn" id="btnBest">BEST&nbsp;TIME</button>
+      <button class="btn" id="btnCopy">COPY</button>
+    </div>
+    <p class="plaque-note engraved">Drag the bezel to set · 5-minute detents</p>
+  </aside>
+</main>
+
+<script>
+'use strict';
+/* ============================== data ============================== */
+const CITIES = [
+  ["Honolulu","US","Pacific/Honolulu"],["Anchorage","US","America/Anchorage"],
+  ["Los Angeles","US","America/Los_Angeles"],["San Francisco","US","America/Los_Angeles"],
+  ["Seattle","US","America/Los_Angeles"],["Vancouver","CA","America/Vancouver"],
+  ["Denver","US","America/Denver"],["Chicago","US","America/Chicago"],
+  ["Mexico City","MX","America/Mexico_City"],["New York City","US","America/New_York"],
+  ["Toronto","CA","America/Toronto"],["Bogotá","CO","America/Bogota"],
+  ["Lima","PE","America/Lima"],["Santiago","CL","America/Santiago"],
+  ["São Paulo","BR","America/Sao_Paulo"],["Buenos Aires","AR","America/Argentina/Buenos_Aires"],
+  ["Reykjavík","IS","Atlantic/Reykjavik"],["London","GB","Europe/London"],
+  ["Dublin","IE","Europe/Dublin"],["Lisbon","PT","Europe/Lisbon"],
+  ["Casablanca","MA","Africa/Casablanca"],["Madrid","ES","Europe/Madrid"],
+  ["Paris","FR","Europe/Paris"],["Brussels","BE","Europe/Brussels"],
+  ["Amsterdam","NL","Europe/Amsterdam"],["Zurich","CH","Europe/Zurich"],
+  ["Rome","IT","Europe/Rome"],["Berlin","DE","Europe/Berlin"],
+  ["Copenhagen","DK","Europe/Copenhagen"],["Oslo","NO","Europe/Oslo"],
+  ["Stockholm","SE","Europe/Stockholm"],["Helsinki","FI","Europe/Helsinki"],
+  ["Warsaw","PL","Europe/Warsaw"],["Prague","CZ","Europe/Prague"],
+  ["Vienna","AT","Europe/Vienna"],["Athens","GR","Europe/Athens"],
+  ["Istanbul","TR","Europe/Istanbul"],["Kyiv","UA","Europe/Kyiv"],
+  ["Moscow","RU","Europe/Moscow"],["Tel Aviv","IL","Asia/Jerusalem"],
+  ["Cairo","EG","Africa/Cairo"],["Lagos","NG","Africa/Lagos"],
+  ["Nairobi","KE","Africa/Nairobi"],["Johannesburg","ZA","Africa/Johannesburg"],
+  ["Cape Town","ZA","Africa/Johannesburg"],["Dubai","AE","Asia/Dubai"],
+  ["Karachi","PK","Asia/Karachi"],["Mumbai","IN","Asia/Kolkata"],
+  ["Delhi","IN","Asia/Kolkata"],["Bangalore","IN","Asia/Kolkata"],
+  ["Dhaka","BD","Asia/Dhaka"],["Bangkok","TH","Asia/Bangkok"],
+  ["Jakarta","ID","Asia/Jakarta"],["Singapore","SG","Asia/Singapore"],
+  ["Hong Kong","HK","Asia/Hong_Kong"],["Shanghai","CN","Asia/Shanghai"],
+  ["Beijing","CN","Asia/Shanghai"],["Taipei","TW","Asia/Taipei"],
+  ["Manila","PH","Asia/Manila"],["Seoul","KR","Asia/Seoul"],
+  ["Tokyo","JP","Asia/Tokyo"],["Osaka","JP","Asia/Tokyo"],
+  ["Perth","AU","Australia/Perth"],["Brisbane","AU","Australia/Brisbane"],
+  ["Sydney","AU","Australia/Sydney"],["Melbourne","AU","Australia/Melbourne"],
+  ["Auckland","NZ","Pacific/Auckland"],["Wellington","NZ","Pacific/Wellington"],
+].map(([name,cc,tz])=>({name,cc,tz}));
+
+const flagOf = cc => String.fromCodePoint(...[...cc].map(c=>0x1F1E6 + c.charCodeAt(0) - 65));
+
+/* ============================== state ============================== */
+const MAX_STATIONS = 6;
+let stations = [];
+let sel = Date.now();          // selected instant (ms epoch)
+let following = true;          // tracking "now"
+let hoverRing = -1;
+
+(function initStations(){
+  const homeTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const home = CITIES.find(c=>c.tz===homeTz) ||
+    {name:(homeTz.split('/').pop()||'Local').replace(/_/g,' '), cc:null, tz:homeTz};
+  stations.push(home);
+  for (const want of ["New York City","London","Tokyo"]){
+    const c = CITIES.find(x=>x.name===want);
+    if (c && !stations.some(s=>s.tz===c.tz && s.name===c.name)) stations.push(c);
+  }
+  stations = stations.slice(0, MAX_STATIONS);
+})();
+
+/* ============================== tz math ============================== */
+const fmtCache = new Map();
+function partsFmt(tz){
+  let f = fmtCache.get(tz);
+  if (!f){
+    f = new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12:false,
+      weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    fmtCache.set(tz,f);
+  }
+  return f;
+}
+function tzParts(tz, ms){
+  const o = {};
+  for (const p of partsFmt(tz).formatToParts(ms)) o[p.type]=p.value;
+  return {wd:o.weekday, mon:o.month, day:+o.day, year:+o.year,
+          h:(+o.hour)%24, m:+o.minute};
+}
+const localMinutes = (tz,ms)=>{ const p=tzParts(tz,ms); return p.h*60+p.m; };
+function fmtTime(tz, ms){
+  return new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit',hour12:true})
+    .format(ms).replace(/\s/g,' ');
+}
+function dayDiff(tz, ms){ // whole days vs the first station's calendar date
+  const a = tzParts(stations[0].tz, ms), b = tzParts(tz, ms);
+  return Math.round(
+    (Date.UTC(b.year, monthNum(b.mon), b.day) - Date.UTC(a.year, monthNum(a.mon), a.day)) / 864e5);
+}
+const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+const monthNum = m => MONTHS[m] ?? 0;
+
+/* ============================== canvas ============================== */
+const canvas = document.getElementById('dial');
+const ctx = canvas.getContext('2d');
+const S = 760, C = S/2;
+const dpr = Math.min(window.devicePixelRatio||1, 2.5);
+canvas.width = S*dpr; canvas.height = S*dpr;
+ctx.scale(dpr,dpr);
+const TAU = Math.PI*2;
+
+const CASE_R = 372, CASE_W = 20, RING_OUT = CASE_R - CASE_W, HUB_R = 122;
+
+/* metal palettes — rings alternate brass / nickel */
+const METALS = [
+  {hi:'#f3dfae', mid:'#c9a668', lo:'#8a6a30', dark:'#3f2f10', light:'rgba(255,240,200,.38)'},
+  {hi:'#f0f2f4', mid:'#b9bec6', lo:'#767c86', dark:'#23262c', light:'rgba(255,255,255,.42)'},
+];
+const ENAMEL = { night:'#16233f', shoulder:'#8f5b28', fringe:'#dcb56b', prime:'#f7eed2' };
+function hourCat(h){
+  if (h>=9 && h<18) return 'prime';
+  if ((h>=8&&h<9)||(h>=18&&h<20)) return 'fringe';
+  if ((h>=6&&h<8)||(h>=20&&h<22)) return 'shoulder';
+  return 'night';
+}
+/* accent dots used on the plaque to tie rows to rings */
+const RINGDOT = ['#c9a668','#b9bec6','#c9a668','#b9bec6','#c9a668','#b9bec6'];
+
+/* deterministic brushed-metal stops */
+function seeded(seed){ let s=seed; return ()=>{ s=(s*1664525+1013904223)>>>0; return s/2**32; }; }
+function hexRgb(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+function mix(a,b,t){
+  const A=hexRgb(a),B=hexRgb(b);
+  return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')})`;
+}
+function brushedGradient(pal, seed){
+  if (!ctx.createConicGradient) return pal.mid;
+  const g = ctx.createConicGradient(-Math.PI/2, C, C);
+  const rnd = seeded(seed), N = 110;
+  for (let i=0;i<=N;i++){
+    const t=i/N, ang=t*TAU;
+    // broad sheen: brightest toward upper-left (ang ≈ 1.25π), darkest opposite
+    const sheen = 0.5 + 0.5*Math.cos(ang - Math.PI*1.25);
+    const jitter = (rnd()-0.5)*0.22;
+    const v = Math.min(1, Math.max(0, 0.25 + sheen*0.55 + jitter));
+    g.addColorStop(t, mix(pal.lo, pal.hi, v));
+  }
+  return g;
+}
+
+function engraveText(txt, x, y, size, family, pal, weight){
+  ctx.font = `${weight||600} ${size}px ${family}`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = pal.light;
+  ctx.fillText(txt, x, y+1);
+  ctx.fillStyle = pal.dark;
+  ctx.fillText(txt, x, y);
+}
+
+/* text along an arc, chars oriented radially (feet toward hub) */
+function arcText(txt, r, centerAngle, size, family, pal, flip, weight){
+  ctx.font = `${weight||600} ${size}px ${family}`;
+  const widths = [...txt].map(ch=>ctx.measureText(ch).width);
+  const total = widths.reduce((a,b)=>a+b,0);
+  const totalAng = total / r;
+  let a = centerAngle - totalAng/2 * (flip?-1:1);
+  const chars = [...txt];
+  for (let i=0;i<chars.length;i++){
+    const w = widths[i], half = (w/2)/r * (flip?-1:1);
+    a += half;
+    ctx.save();
+    ctx.translate(C + Math.cos(a)*r, C + Math.sin(a)*r);
+    ctx.rotate(a + (flip? -Math.PI/2 : Math.PI/2));
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle = pal.light; ctx.fillText(chars[i], 0, 1.1);
+    ctx.fillStyle = pal.dark;  ctx.fillText(chars[i], 0, 0);
+    ctx.restore();
+    a += half;
+  }
+  return totalAng;
+}
+
+function annulus(r1, r2, a0, a1){
+  ctx.beginPath();
+  ctx.arc(C,C,r2,a0,a1);
+  ctx.arc(C,C,r1,a1,a0,true);
+  ctx.closePath();
+}
+
+/* ---------- static furniture ---------- */
+function drawCase(){
+  // case band
+  ctx.save();
+  annulus(RING_OUT, CASE_R, 0, TAU);
+  const g = ctx.createLinearGradient(C-CASE_R,C-CASE_R,C+CASE_R,C+CASE_R);
+  g.addColorStop(0,'#4b4f56'); g.addColorStop(.35,'#23262c');
+  g.addColorStop(.65,'#3a3e45'); g.addColorStop(1,'#15171b');
+  ctx.fillStyle=g; ctx.fill();
+  // knurling
+  ctx.lineWidth=1.4;
+  for (let d=0; d<360; d+=2.5){
+    const a = d*Math.PI/180;
+    const r1=CASE_R-3, r2=CASE_R-CASE_W+4;
+    ctx.strokeStyle = (d%5<2.5) ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.38)';
+    ctx.beginPath();
+    ctx.moveTo(C+Math.cos(a)*r1, C+Math.sin(a)*r1);
+    ctx.lineTo(C+Math.cos(a)*r2, C+Math.sin(a)*r2);
+    ctx.stroke();
+  }
+  // polished lips
+  ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(C,C,CASE_R-1,0,TAU); ctx.stroke();
+  ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(C,C,RING_OUT+1,0,TAU); ctx.stroke();
+  ctx.restore();
+}
+
+function drawRing(i, st, count){
+  const bandW = (RING_OUT - 6 - HUB_R - 8) / count;
+  const rOut = RING_OUT - 6 - bandW*i;
+  const rIn  = rOut - bandW + 2.5;
+  const pal  = METALS[i%2];
+  const lm   = localMinutes(st.tz, snappedSel());
+  const rot  = -(lm/1440)*TAU;
+
+  // metal base (screen space so sheen stays put)
+  ctx.save();
+  annulus(rIn, rOut, 0, TAU);
+  ctx.fillStyle = brushedGradient(pal, 77+i*13);
+  ctx.fill();
+  // groove edges
+  ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(C,C,rOut-0.8,0,TAU); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.16)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(C,C,rOut-2,0,TAU); ctx.stroke();
+  ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.arc(C,C,rIn+0.8,0,TAU); ctx.stroke();
+  ctx.restore();
+
+  const numeralR = rOut - bandW*0.26;
+  const enOut = rOut - bandW*0.50;
+  const enIn  = rOut - bandW*0.86;
+  const numSize = Math.min(15, bandW*0.30);
+  const nameSize = Math.min(14.5, bandW*0.285);
+
+  /* enamel channel — 24 hourly wedges, in the ring's rotated frame */
+  ctx.save();
+  ctx.translate(C,C); ctx.rotate(rot); ctx.translate(-C,-C);
+  for (let h=0; h<24; h++){
+    const a0 = (h*60/1440)*TAU - Math.PI/2;
+    const a1 = ((h+1)*60/1440)*TAU - Math.PI/2;
+    annulus(enIn, enOut, a0, a1);
+    ctx.fillStyle = ENAMEL[hourCat(h)];
+    ctx.fill();
+  }
+  // cloisonné hour separators
+  ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=0.8;
+  for (let h=0; h<24; h++){
+    const a = (h*60/1440)*TAU - Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(C+Math.cos(a)*enIn, C+Math.sin(a)*enIn);
+    ctx.lineTo(C+Math.cos(a)*enOut, C+Math.sin(a)*enOut);
+    ctx.stroke();
+  }
+  // recess: soft shadow at both lips so the channel reads as sunk enamel
+  const rec = ctx.createRadialGradient(C,C,enIn, C,C,enOut);
+  rec.addColorStop(0,'rgba(0,0,0,.38)');
+  rec.addColorStop(.22,'rgba(0,0,0,0)');
+  rec.addColorStop(.78,'rgba(0,0,0,0)');
+  rec.addColorStop(1,'rgba(0,0,0,.30)');
+  annulus(enIn, enOut, 0, TAU);
+  ctx.fillStyle = rec; ctx.fill();
+  // enamel gloss: dark inner lip + light outer lip
+  ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(C,C,enIn+0.6,0,TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(C,C,enOut-0.5,0,TAU); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.arc(C,C,enOut-1.6,0,TAU); ctx.stroke();
+
+  /* city name curved at local noon */
+  ctx.font = `600 ${nameSize}px Cinzel`;
+  const label = st.name.toUpperCase();
+  const noonLocal = (720/1440)*TAU - Math.PI/2;             // local-frame angle of 12:00
+  const noonScreen = noonLocal + rot;
+  const flip = Math.sin(noonScreen) > 0;                    // lower half of screen → flip
+  const nameSpan = arcText(label, numeralR, noonLocal, nameSize, 'Cinzel', pal, flip);
+
+  /* hour ticks + numerals (skip under the name) */
+  const angDist = (a,b)=>{ let d=Math.abs(a-b)%TAU; return d>Math.PI? TAU-d : d; };
+  for (let h=0; h<24; h++){
+    const a = (h*60/1440)*TAU - Math.PI/2;
+    if (angDist(a, noonLocal) < nameSpan/2 + 0.10) continue;
+    // tick
+    ctx.strokeStyle = pal.dark; ctx.lineWidth = h%3===0 ? 1.8 : 1;
+    ctx.beginPath();
+    const t1 = rOut - bandW*0.08, t2 = rOut - bandW*0.16;
+    ctx.moveTo(C+Math.cos(a)*t1, C+Math.sin(a)*t1);
+    ctx.lineTo(C+Math.cos(a)*t2, C+Math.sin(a)*t2);
+    ctx.stroke();
+    if (h%3===0){
+      ctx.save();
+      ctx.translate(C+Math.cos(a)*numeralR, C+Math.sin(a)*numeralR);
+      ctx.rotate(a+Math.PI/2);
+      ctx.font = `600 ${numSize}px "IBM Plex Mono"`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle = pal.light; ctx.fillText(String(h), 0, 1);
+      ctx.fillStyle = pal.dark;  ctx.fillText(String(h), 0, 0);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+
+  /* hover glow */
+  if (i===hoverRing){
+    ctx.save();
+    annulus(rIn, rOut, 0, TAU);
+    ctx.fillStyle='rgba(255,225,150,.14)';
+    ctx.fill();
+    ctx.restore();
+  }
+  return {rOut, rIn};
+}
+
+function drawHub(){
+  // bevel
+  ctx.save();
+  ctx.beginPath(); ctx.arc(C,C,HUB_R,0,TAU);
+  const bg = ctx.createLinearGradient(C-HUB_R,C-HUB_R,C+HUB_R,C+HUB_R);
+  bg.addColorStop(0,'#585d64'); bg.addColorStop(.5,'#191c20'); bg.addColorStop(1,'#43474e');
+  ctx.fillStyle=bg; ctx.fill();
+  // face — radial brushed steel
+  ctx.beginPath(); ctx.arc(C,C,HUB_R-6,0,TAU);
+  const fg = ctx.createRadialGradient(C-30,C-40,10, C,C,HUB_R);
+  fg.addColorStop(0,'#d7dbe0'); fg.addColorStop(.45,'#aab0b8');
+  fg.addColorStop(.8,'#82878f'); fg.addColorStop(1,'#6a6f77');
+  ctx.fillStyle=fg; ctx.fill();
+  // circular brushing
+  ctx.save();
+  ctx.beginPath(); ctx.arc(C,C,HUB_R-6,0,TAU); ctx.clip();
+  const rnd = seeded(4242);
+  ctx.lineWidth=1;
+  for (let k=0;k<26;k++){
+    const rr = 12 + rnd()*(HUB_R-20);
+    ctx.strokeStyle = rnd()>0.5 ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.08)';
+    ctx.beginPath(); ctx.arc(C,C,rr,0,TAU); ctx.stroke();
+  }
+  ctx.restore();
+  ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(C,C,HUB_R-5.4,0,TAU); ctx.stroke();
+
+  const steel = {dark:'#2a2d33', light:'rgba(255,255,255,.5)'};
+  const ms = snappedSel();
+  const home = stations[0];
+  const p = tzParts(home.tz, ms);
+
+  engraveText('MERIDIAN', C, C-64, 15, 'Cinzel', steel, 700);
+  ctx.save(); ctx.font='500 8.5px "IBM Plex Mono"'; ctx.letterSpacing='2px';
+  ctx.textAlign='center'; ctx.fillStyle='rgba(0,0,0,.45)';
+  ctx.fillText('WORLD - TIME', C, C-48);
+  ctx.restore();
+
+  engraveText(fmtTime(home.tz, ms), C, C-6, 34, '"IBM Plex Mono"', steel, 600);
+  engraveText(home.name.toUpperCase(), C, C+24, 10.5, 'Cinzel', steel, 600);
+
+  // date window
+  const w=86, h=24, y=C+42;
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(C-w/2, y, w, h, 4);
+  ctx.fillStyle='#f4ecd6'; ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.roundRect(C-w/2-1.5, y-1.5, w+3, h+3, 5); ctx.stroke();
+  ctx.font='600 12.5px "IBM Plex Mono"'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#241c0d';
+  ctx.fillText(`${p.wd.toUpperCase()} ${p.mon.toUpperCase()} ${p.day}`, C, y+h/2+0.5);
+  ctx.restore();
+
+  // two slotted screws
+  for (const sa of [Math.PI*0.78, Math.PI*1.78]){
+    const sx=C+Math.cos(sa)*(HUB_R-18), sy=C+Math.sin(sa)*(HUB_R-18);
+    ctx.beginPath(); ctx.arc(sx,sy,4.4,0,TAU);
+    const sg=ctx.createRadialGradient(sx-1.4,sy-1.4,0.5,sx,sy,4.6);
+    sg.addColorStop(0,'#e8ebee'); sg.addColorStop(.6,'#9aa0a8'); sg.addColorStop(1,'#4c5057');
+    ctx.fillStyle=sg; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=1;
+    ctx.save(); ctx.translate(sx,sy); ctx.rotate(sa*1.7);
+    ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(3,0); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawLubber(){
+  ctx.save();
+  // hairline across the rings
+  const g = ctx.createLinearGradient(C, C-CASE_R, C, C-HUB_R);
+  g.addColorStop(0,'rgba(196,60,60,.95)');
+  g.addColorStop(1,'rgba(196,60,60,.55)');
+  ctx.strokeStyle=g; ctx.lineWidth=2;
+  ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=3; ctx.shadowOffsetY=1;
+  ctx.beginPath();
+  ctx.moveTo(C, C-CASE_R+4); ctx.lineTo(C, C-HUB_R+2);
+  ctx.stroke();
+  ctx.shadowColor='transparent';
+  // jewel at the case
+  const jy = C-CASE_R+10;
+  ctx.beginPath(); ctx.arc(C, jy, 6.5, 0, TAU);
+  const jg = ctx.createRadialGradient(C-2, jy-2.5, 0.5, C, jy, 7);
+  jg.addColorStop(0,'#ff9d94'); jg.addColorStop(.35,'#d84a44');
+  jg.addColorStop(.8,'#8e1f1e'); jg.addColorStop(1,'#5c0f10');
+  ctx.fillStyle=jg; ctx.fill();
+  ctx.strokeStyle='rgba(255,235,200,.55)'; ctx.lineWidth=1; ctx.stroke();
+  // pointer at hub
+  ctx.beginPath();
+  ctx.moveTo(C-5, C-HUB_R+1); ctx.lineTo(C+5, C-HUB_R+1); ctx.lineTo(C, C-HUB_R+10);
+  ctx.closePath();
+  ctx.fillStyle='#c43c3c'; ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.45)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.restore();
+}
+
+function drawGlass(){
+  ctx.save();
+  ctx.beginPath(); ctx.arc(C,C,RING_OUT,0,TAU); ctx.clip();
+  const g = ctx.createRadialGradient(C-250, C-320, 40, C-120, C-160, 620);
+  g.addColorStop(0,'rgba(255,255,255,.15)');
+  g.addColorStop(.35,'rgba(255,255,255,.05)');
+  g.addColorStop(.6,'rgba(255,255,255,0)');
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,S,S);
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,S,S);
+  drawCase();
+  const n = stations.length;
+  for (let i=0;i<n;i++) drawRing(i, stations[i], n);
+  drawHub();
+  drawLubber();
+  drawGlass();
+}
+
+/* ============================== interaction ============================== */
+const SNAP = 5*60*1000;
+const snappedSel = ()=> Math.round(sel/SNAP)*SNAP;
+
+function pointerAngle(e){
+  const r = canvas.getBoundingClientRect();
+  const x = (e.clientX - r.left) * (S/r.width) - C;
+  const y = (e.clientY - r.top) * (S/r.height) - C;
+  return {ang:Math.atan2(y,x), rad:Math.hypot(x,y)};
+}
+let drag = null;
+canvas.addEventListener('pointerdown', e=>{
+  const {ang} = pointerAngle(e);
+  drag = {ang, sel};
+  canvas.setPointerCapture(e.pointerId);
+  canvas.classList.add('dragging');
+});
+canvas.addEventListener('pointermove', e=>{
+  if (drag){
+    const {ang} = pointerAngle(e);
+    let d = ang - drag.ang;
+    if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU;
+    drag.ang = ang;
+    drag.sel += d/TAU * 1440 * 60000;   // dragging clockwise advances time
+    sel = drag.sel;
+    setFollowing(false);
+    update();
+  } else {
+    const {rad} = pointerAngle(e);
+    const n = stations.length;
+    const bandW = (RING_OUT - 6 - HUB_R - 8)/n;
+    let idx = -1;
+    if (rad < RING_OUT-6 && rad > HUB_R+8) idx = Math.floor((RING_OUT - 6 - rad)/bandW);
+    if (idx !== hoverRing){ hoverRing = idx; update(); }
+  }
+});
+function endDrag(){
+  if (!drag) return;
+  drag = null;
+  sel = snappedSel();
+  canvas.classList.remove('dragging');
+  update();
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerleave', ()=>{ if(hoverRing!==-1){hoverRing=-1;update();} });
+canvas.addEventListener('keydown', e=>{
+  const step = e.shiftKey ? 60 : 15;
+  if (e.key==='ArrowRight' || e.key==='ArrowUp'){ sel = snappedSel() + step*60000; setFollowing(false); update(); e.preventDefault(); }
+  if (e.key==='ArrowLeft' || e.key==='ArrowDown'){ sel = snappedSel() - step*60000; setFollowing(false); update(); e.preventDefault(); }
+});
+
+/* ============================== plaque ============================== */
+const stationList = document.getElementById('stationList');
+const modeLamp = document.getElementById('modeLamp');
+const modeText = document.getElementById('modeText');
+
+function setFollowing(v){
+  following = v;
+  modeLamp.classList.toggle('set', !v);
+  modeText.textContent = v ? 'LIVE' : 'SET';
+}
+
+function renderStations(){
+  const ms = snappedSel();
+  stationList.innerHTML='';
+  stations.forEach((st,i)=>{
+    const li = document.createElement('li');
+    if (i===hoverRing) li.classList.add('hover');
+    const dd = dayDiff(st.tz, ms);
+    li.innerHTML = `
+      <span class="swatch" style="background:${RINGDOT[i]}"></span>
+      <span class="flag">${st.cc?flagOf(st.cc):'◦'}</span>
+      <span class="name engraved">${st.name}</span>
+      <span class="time engraved">${fmtTime(st.tz, ms)}</span>
+      ${dd!==0?`<span class="day">${dd>0?'+':''}${dd}d</span>`:''}
+      ${stations.length>1?`<button class="rm" aria-label="Remove ${st.name}">✕</button>`:''}
+    `;
+    li.addEventListener('mouseenter', ()=>{ hoverRing=i; update(); });
+    li.addEventListener('mouseleave', ()=>{ hoverRing=-1; update(); });
+    const rm = li.querySelector('.rm');
+    if (rm) rm.addEventListener('click', ()=>{ stations.splice(i,1); hoverRing=-1; update(); });
+    stationList.appendChild(li);
+  });
+}
+
+/* search */
+const input = document.getElementById('searchInput');
+const results = document.getElementById('searchResults');
+let selIdx = 0;
+function searchMatches(q){
+  q = q.trim().toLowerCase();
+  if (!q) return [];
+  return CITIES.filter(c =>
+    c.name.toLowerCase().includes(q) &&
+    !stations.some(s=>s.name===c.name)
+  ).slice(0,7);
+}
+function renderResults(){
+  const ms = searchMatches(input.value);
+  results.innerHTML='';
+  results.classList.toggle('open', ms.length>0);
+  ms.forEach((c,i)=>{
+    const b = document.createElement('button');
+    b.type='button'; b.setAttribute('role','option');
+    if (i===selIdx) b.classList.add('sel');
+    b.innerHTML = `<span>${flagOf(c.cc)}</span><span>${c.name}</span><span class="co">${c.cc}</span>`;
+    b.addEventListener('click', ()=>addCity(c));
+    results.appendChild(b);
+  });
+}
+function addCity(c){
+  if (stations.length >= MAX_STATIONS){
+    input.value=''; input.placeholder='Six stations maximum — remove one first';
+    results.classList.remove('open');
+    return;
+  }
+  stations.push(c);
+  input.value=''; input.placeholder='Add a city…';
+  results.classList.remove('open'); selIdx=0;
+  update();
+}
+input.addEventListener('input', ()=>{ selIdx=0; renderResults(); });
+input.addEventListener('keydown', e=>{
+  const ms = searchMatches(input.value);
+  if (e.key==='ArrowDown'){ selIdx=Math.min(selIdx+1, ms.length-1); renderResults(); e.preventDefault(); }
+  if (e.key==='ArrowUp'){ selIdx=Math.max(selIdx-1, 0); renderResults(); e.preventDefault(); }
+  if (e.key==='Enter' && ms[selIdx]){ addCity(ms[selIdx]); e.preventDefault(); }
+  if (e.key==='Escape'){ results.classList.remove('open'); }
+});
+document.addEventListener('click', e=>{
+  if (!e.target.closest('.search')) results.classList.remove('open');
+});
+
+/* buttons */
+document.getElementById('btnNow').addEventListener('click', ()=>{
+  sel = Date.now(); setFollowing(true); update();
+});
+document.getElementById('btnBest').addEventListener('click', ()=>{
+  // score every 15-min slot of the home city's current calendar day
+  const ms0 = snappedSel();
+  const home = stations[0];
+  const p = tzParts(home.tz, ms0);
+  const dayStart = ms0 - (p.h*60+p.m)*60000;
+  let best = ms0, bestScore = -Infinity;
+  for (let k=0;k<96;k++){
+    const t = dayStart + k*15*60000;
+    let score = 0;
+    for (const st of stations){
+      const h = tzParts(st.tz, t).h;
+      if (h>=9 && h<18) score += 2;
+      else if ((h>=8&&h<9)||(h>=18&&h<21)) score += 1;
+      else if (h>=23 || h<7) score -= 3;
+    }
+    if (score > bestScore){ bestScore = score; best = t; }
+  }
+  sel = best; setFollowing(false); update();
+});
+document.getElementById('btnCopy').addEventListener('click', async e=>{
+  const ms = snappedSel();
+  const home = stations[0];
+  const p = tzParts(home.tz, ms);
+  const parts = stations.map(st=>{
+    const dd = dayDiff(st.tz, ms);
+    const w = dd!==0 ? ` (${tzParts(st.tz,ms).wd})` : '';
+    return `${st.name} ${fmtTime(st.tz,ms).replace(' ',' ')}${w}`;
+  });
+  const text = `${p.wd}, ${p.mon} ${p.day} — ${parts.join(' · ')}`;
+  try{
+    await navigator.clipboard.writeText(text);
+    const btn = e.currentTarget; const old = btn.textContent;
+    btn.textContent='COPIED ✓';
+    setTimeout(()=>{ btn.textContent = old; }, 1400);
+  }catch{ prompt('Copy meeting times:', text); }
+});
+
+/* ============================== boot ============================== */
+function update(){ draw(); renderStations(); }
+setInterval(()=>{ if (following){ sel = Date.now(); update(); } }, 30000);
+
+update();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(update);
+</script>
+</body>
+</html>
