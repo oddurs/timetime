@@ -398,12 +398,12 @@ const METALS = [
 ];
 /* fired-enamel sky: continuous color over the 24h day, wrapping at midnight */
 const SKY = [
-  [ 0.0,  13, 27, 58], [ 2.5,  10, 22, 50], [ 4.5,  18, 32, 68],
-  [ 5.5,  47, 48, 88], [ 6.3, 122, 78, 74], [ 7.0, 189,124, 78],
-  [ 8.0, 222,168,102], [ 9.5, 238,213,160], [12.0, 247,238,207],
-  [14.5, 243,228,185], [16.5, 232,200,138], [18.0, 209,152, 85],
-  [19.0, 164, 95, 63], [19.8, 109, 70, 87], [20.6,  61, 55, 96],
-  [21.5,  33, 40, 78], [23.0,  18, 30, 62], [24.0,  13, 27, 58],
+  [ 0.0,   8, 18, 48], [ 2.5,   6, 14, 40], [ 4.5,  13, 26, 66],
+  [ 5.5,  44, 42, 96], [ 6.3, 128, 68, 72], [ 7.0, 200,116, 62],
+  [ 8.0, 231,164, 84], [ 9.5, 243,212,146], [12.0, 250,240,200],
+  [14.5, 246,226,170], [16.5, 238,196,118], [18.0, 216,146, 66],
+  [19.0, 176, 86, 50], [19.8, 118, 62, 92], [20.6,  58, 48,104],
+  [21.5,  26, 34, 82], [23.0,  12, 24, 58], [24.0,   8, 18, 48],
 ];
 function skyAt(h){
   h = ((h%24)+24)%24;
@@ -597,12 +597,17 @@ function drawRing(i, st, count){
     ctx.lineTo(C+Math.cos(a)*enOut, C+Math.sin(a)*enOut);
     ctx.stroke();
   }
-  // recess: soft shadow at both lips so the channel reads as sunk enamel
+  // glass depth: dark meniscus at both lips, bright dome band through the middle
   const rec = ctx.createRadialGradient(C,C,enIn, C,C,enOut);
-  rec.addColorStop(0,'rgba(0,0,0,.38)');
-  rec.addColorStop(.22,'rgba(0,0,0,0)');
-  rec.addColorStop(.78,'rgba(0,0,0,0)');
-  rec.addColorStop(1,'rgba(0,0,0,.30)');
+  rec.addColorStop(0,   'rgba(2,6,18,.55)');
+  rec.addColorStop(.16, 'rgba(2,6,18,.12)');
+  rec.addColorStop(.30, 'rgba(2,6,18,0)');
+  rec.addColorStop(.52, 'rgba(255,255,255,0)');
+  rec.addColorStop(.62, 'rgba(255,255,255,.16)');
+  rec.addColorStop(.72, 'rgba(255,255,255,0)');
+  rec.addColorStop(.82, 'rgba(2,6,18,0)');
+  rec.addColorStop(.93, 'rgba(2,6,18,.18)');
+  rec.addColorStop(1,   'rgba(2,6,18,.55)');
   annulus(enIn, enOut, 0, TAU);
   ctx.fillStyle = rec; ctx.fill();
   // enamel gloss: dark inner lip + light outer lip
@@ -694,11 +699,16 @@ function drawRing(i, st, count){
   ctx.save();
   annulus(enIn, enOut, 0, TAU); ctx.clip();
   const gloss = ctx.createRadialGradient(C-170, C-210, 40, C, C, rOut+40);
-  gloss.addColorStop(0,'rgba(255,255,255,.15)');
-  gloss.addColorStop(.45,'rgba(255,255,255,.04)');
+  gloss.addColorStop(0,'rgba(255,255,255,.22)');
+  gloss.addColorStop(.45,'rgba(255,255,255,.05)');
   gloss.addColorStop(.75,'rgba(255,255,255,0)');
-  gloss.addColorStop(1,'rgba(0,0,10,.08)');
+  gloss.addColorStop(1,'rgba(0,0,10,.12)');
   ctx.fillStyle=gloss; ctx.fillRect(0,0,S,S);
+  // crisp glare streak where the room light rakes the glazing
+  ctx.strokeStyle='rgba(255,255,255,.14)';
+  ctx.lineWidth=(enOut-enIn)*0.36; ctx.lineCap='round';
+  ctx.shadowColor='rgba(255,255,255,.3)'; ctx.shadowBlur=7;
+  ctx.beginPath(); ctx.arc(C,C,(enIn+enOut)/2, Math.PI*1.12, Math.PI*1.30); ctx.stroke();
   ctx.restore();
 
   /* hover glow */
