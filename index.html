@@ -1022,7 +1022,7 @@ canvas.addEventListener('pointermove', e=>{
     const bandW = (RING_OUT - 6 - HUB_R - 8)/n;
     let idx = -1;
     if (rad < RING_OUT-6 && rad > HUB_R+8) idx = Math.floor((RING_OUT - 6 - rad)/bandW);
-    if (idx !== hoverRing){ hoverRing = idx; update(); }
+    if (idx !== hoverRing){ hoverRing = idx; hoverChanged(); }
   }
 });
 function endDrag(){
@@ -1034,7 +1034,7 @@ function endDrag(){
 }
 canvas.addEventListener('pointerup', endDrag);
 canvas.addEventListener('pointercancel', endDrag);
-canvas.addEventListener('pointerleave', ()=>{ if(hoverRing!==-1){hoverRing=-1;update();} });
+canvas.addEventListener('pointerleave', ()=>{ if(hoverRing!==-1){hoverRing=-1;hoverChanged();} });
 canvas.addEventListener('keydown', e=>{
   const step = e.shiftKey ? 60 : 15;
   if (e.key==='ArrowRight' || e.key==='ArrowUp'){ sel = snappedSel() + step*60000; setFollowing(false); update(); e.preventDefault(); }
@@ -1073,8 +1073,8 @@ function renderStations(){
       </span>
       ${stations.length>1?`<button class="rm" aria-label="Remove ${st.name}">✕</button>`:''}
     `;
-    li.addEventListener('mouseenter', ()=>{ hoverRing=i; update(); });
-    li.addEventListener('mouseleave', ()=>{ hoverRing=-1; update(); });
+    li.addEventListener('mouseenter', ()=>{ hoverRing=i; hoverChanged(); });
+    li.addEventListener('mouseleave', ()=>{ hoverRing=-1; hoverChanged(); });
     const rm = li.querySelector('.rm');
     if (rm) rm.addEventListener('click', ()=>{ stations.splice(i,1); hoverRing=-1; update(); });
     stationList.appendChild(li);
@@ -1176,6 +1176,13 @@ function update(){
   rebuildRings();
   renderStations();
   if (REDUCED) drawFrame(0);   // otherwise the rAF loop picks the layer up
+}
+/* hover must NOT rebuild the plaque DOM — a re-render mid-click would
+   destroy the ✕ button between mousedown and mouseup */
+function hoverChanged(){
+  rebuildRings();
+  if (REDUCED) drawFrame(0);
+  [...stationList.children].forEach((li,i)=>li.classList.toggle('hover', i===hoverRing));
 }
 setInterval(()=>{ if (following){ sel = Date.now(); update(); } }, 30000);
 
