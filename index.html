@@ -48,7 +48,7 @@
     display:flex;align-items:center;justify-content:center;
     gap:clamp(24px,4vw,64px);
     flex-wrap:wrap;
-    padding:clamp(20px,4vw,56px);
+    padding:clamp(14px,2.5vh,32px) clamp(20px,4vw,56px);
   }
   /* ---------- Instrument ---------- */
   .dial-wrap{position:relative;flex:0 1 auto;display:flex;flex-direction:column;align-items:center}
@@ -70,7 +70,8 @@
   }
   canvas#dial{
     display:block;
-    width:min(86vmin,760px);height:min(86vmin,760px);
+    width:min(86vmin,760px,calc(100vh - 190px));
+    height:min(86vmin,760px,calc(100vh - 190px));
     border-radius:50%;
     filter:drop-shadow(0 34px 60px rgba(0,0,0,.62)) drop-shadow(0 8px 18px rgba(0,0,0,.5));
     cursor:grab;
@@ -188,13 +189,13 @@
   }
   .stations .swatch{width:8px;height:8px;border-radius:50%;flex:none;
     box-shadow:inset 0 0 0 1px rgba(63,47,16,.6)}
+  .stations .right{
+    margin-left:auto;display:flex;align-items:center;gap:7px;
+  }
   .stations .sun{
-    margin-left:auto;
     font-size:12px;width:15px;text-align:center;
     color:rgba(63,47,16,.75);
   }
-  .stations .time{margin-left:auto}
-  .stations .sun + .time{margin-left:0}
   .stations .time{
     font-family:"Cormorant",serif;font-size:17px;font-weight:600;
     font-variant-numeric:lining-nums tabular-nums;white-space:nowrap;
@@ -1010,9 +1011,11 @@ function renderStations(){
       <span class="swatch" style="background:${RINGDOT[i]}"></span>
       <span class="flag">${st.cc?flagOf(st.cc):'◦'}</span>
       <span class="name engraved">${st.name}</span>
-      ${glyph}
-      <span class="time engraved">${fmtTime(st.tz, ms)}</span>
-      ${dd!==0?`<span class="day">${dd>0?'+':''}${dd}d</span>`:''}
+      <span class="right">
+        ${glyph}
+        ${dd!==0?`<span class="day">${dd>0?'+':''}${dd}d</span>`:''}
+        <span class="time engraved">${fmtTime(st.tz, ms)}</span>
+      </span>
       ${stations.length>1?`<button class="rm" aria-label="Remove ${st.name}">✕</button>`:''}
     `;
     li.addEventListener('mouseenter', ()=>{ hoverRing=i; update(); });
