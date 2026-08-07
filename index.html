@@ -146,19 +146,17 @@
   .plaque-head h1{
     font-family:"Cormorant SC",serif;font-weight:700;font-size:22px;letter-spacing:.18em;
   }
-  .mode-lamp{
-    display:inline-flex;align-items:center;gap:7px;
-    font-family:"Alegreya Sans",sans-serif;font-size:10.5px;letter-spacing:.16em;font-weight:700;
+  .mode-ap{ /* chronometer flag aperture: recessed window, backlit text */
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:44px;padding:3px 10px 4px;border-radius:5px;
+    background:linear-gradient(180deg,#191307,#2a2112);
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.75), inset 0 0 0 1px rgba(0,0,0,.5),
+               0 1px 0 rgba(255,245,210,.4);
+    font-family:"Alegreya Sans",sans-serif;font-size:10px;font-weight:700;
+    letter-spacing:.24em;text-indent:.24em;
+    color:#e9d79f;text-shadow:0 0 7px rgba(240,210,140,.4);
   }
-  .mode-lamp .bulb{
-    width:9px;height:9px;border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #d9ffd0, #3f9b46 55%, #1d5423);
-    box-shadow:inset 0 -1px 1px rgba(0,0,0,.5), 0 0 7px rgba(90,220,110,.75);
-  }
-  .mode-lamp.set .bulb{
-    background:radial-gradient(circle at 35% 30%, #ffe9c2, #c98a2e 55%, #6e4711);
-    box-shadow:inset 0 -1px 1px rgba(0,0,0,.5), 0 0 7px rgba(240,180,80,.8);
-  }
+  .mode-ap.set{color:#dda45e;text-shadow:0 0 7px rgba(230,160,80,.45)}
   /* search */
   .search{position:relative;margin:12px 0 10px}
   .search input{
@@ -244,27 +242,36 @@
   }
   .stations .rm:hover{color:#7c1f1f;background:rgba(63,47,16,.15)}
   /* buttons */
-  .controls{display:flex;gap:10px;margin-top:16px}
-  .btn{
-    flex:1;padding:9px 4px 8px;
-    font-family:"Cormorant SC",serif;font-weight:700;font-size:14.5px;letter-spacing:.12em;
-    color:#20242b;cursor:pointer;
-    border-radius:7px;
-    border:1px solid #55595f;
-    background:linear-gradient(180deg,#f2f4f6 0%, #c3c8cf 45%, #9aa0a9 55%, #c9ced5 100%);
+  .controls{display:flex;gap:14px;margin-top:18px;padding:0 2px}
+  .btn{ /* black-lacquer cap in a brass bezel, telegraph-console style */
+    flex:1;padding:10px 4px 9px;
+    font-family:"Cormorant SC",serif;font-weight:700;font-size:14px;letter-spacing:.14em;
+    color:#ead9a8;cursor:pointer;
+    border-radius:9px;
+    border:1px solid #0f0c08;
+    background:linear-gradient(180deg,#3b3730 0%, #1a1713 55%, #262019 100%);
     box-shadow:
-      0 3px 6px rgba(0,0,0,.45),
-      inset 0 1px 0 rgba(255,255,255,.9),
-      inset 0 -2px 3px rgba(35,38,44,.35);
-    text-shadow:0 1px 0 rgba(255,255,255,.6);
+      0 0 0 1px rgba(255,235,190,.4),
+      0 0 0 3px #a9854a,
+      0 0 0 4px rgba(46,33,10,.9),
+      0 6px 12px rgba(0,0,0,.5),
+      inset 0 1px 0 rgba(255,255,255,.13),
+      inset 0 -3px 6px rgba(0,0,0,.55);
+    text-shadow:0 0 7px rgba(240,210,140,.28), 0 1px 1px rgba(0,0,0,.8);
   }
-  .btn:hover{filter:brightness(1.05)}
+  .btn:hover{filter:brightness(1.14)}
   .btn:active{
-    background:linear-gradient(180deg,#aab0b8 0%, #c9ced5 60%, #b3b9c1 100%);
-    box-shadow:inset 0 2px 5px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.35);
+    background:linear-gradient(180deg,#14110d 0%, #221d16 100%);
+    box-shadow:
+      0 0 0 1px rgba(255,235,190,.3),
+      0 0 0 3px #a9854a,
+      0 0 0 4px rgba(46,33,10,.9),
+      0 3px 7px rgba(0,0,0,.5),
+      inset 0 2px 6px rgba(0,0,0,.85);
     transform:translateY(1px);
+    color:#cdb87f;
   }
-  .btn:focus-visible{outline:2px solid #20242b;outline-offset:2px}
+  .btn:focus-visible{outline:2px solid #42300f;outline-offset:5px}
   .plaque-note{
     margin-top:14px;text-align:center;
     font-size:11.5px;font-style:italic;color:rgba(63,47,16,.75);
@@ -291,7 +298,7 @@
 
     <div class="plaque-head">
       <h1 class="engraved">STATIONS</h1>
-      <span class="mode-lamp engraved" id="modeLamp"><span class="bulb"></span><span id="modeText">LIVE</span></span>
+      <span class="mode-ap" id="modeLamp"><span id="modeText">LIVE</span></span>
     </div>
 
     <div class="search">
